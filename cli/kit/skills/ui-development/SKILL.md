@@ -73,7 +73,7 @@ protects. That is §9 and your project's architectural decisions; the
 distinction is *where the store comes from and what is in it*, not the word "store".
 
 What a composite may take instead: values, `ReactNode` slots, and callbacks. A screen that wants
-live generation progress takes `stage` and `percent` as props; the polling belongs to the route.
+live job progress takes `stage` and `percent` as props; the polling belongs to the route.
 
 ### Routing is the caller's
 
@@ -372,7 +372,7 @@ const store = useState(() => createResultScreenStore(initialFromProps))[0];
 Three rules, and each one is what keeps this layer's contract intact:
 
 - **View state only.** Which dialog is open, what it was opened for, which view is selected. Never
-  a product, a project or a generation — a store holding a server answer means the value's home was
+  a domain entity or a server-side resource — a store holding a server answer means the value's home was
   the database, and that is unchanged.
 - **Seeded from props, per mount.** The provider takes the screen's props as its initial state, so
   a story can still render every state the screen can be in and the quality test can still measure

@@ -31,14 +31,13 @@ One package, one mode: `pnpm --filter your UI package test:quality`.
 `your component library` and `your UI package` hold stories; quality spans `your component library`, `your UI package`,
 `your UI package-testing`, `your visual testing package`.
 
-**There were two more modes, `pixel` and `visual`, and they are retired** (24 Aug 2026 —
-your project's architectural decisions, your project's architectural decisions). `pixel` compared a composite against a screenshot of itself, and its
-baselines were never tracked, so a fresh checkout reported every case as "no reference
-screenshot found" and only a second run on the same machine passed — it could not gate CI,
-which is always a fresh checkout. `visual` compared the DOM against a tracked Figma snapshot
-and was the better idea, but no browser leg ever ran in CI, so it was tests nobody executed.
-`packages/visual-testing` is kept and still passes its own tests; nothing consumes it.
-**Figma fidelity is not checked mechanically today** — say so rather than implying a gate.
+**Some browser modes may be retired in your project.** If `pixel` and `visual` are present but no longer run, record that in your testing documentation and report the gap plainly.
+`pixel` compares a composite against a screenshot of itself; if baselines are not tracked, a fresh checkout reports every case as "no reference
+screenshot found" and only a second run on the same machine passes — it cannot gate CI,
+which is always a fresh checkout. `visual` compares the DOM against a tracked design snapshot
+and is the better idea, but it is only a gate if the browser leg runs in CI.
+Keep any supporting package only if something consumes it.
+**Design fidelity is not checked mechanically unless such a gate actually runs** — say so rather than implying a gate.
 
 ## Which stack does this change need?
 
@@ -101,11 +100,10 @@ seconds on a fresh database hang for their full budget on a dirty one.
 
 ### Run the slice, not the suite
 
-**The default local run is a slice.** One worker and ~183 scenarios, with 120-second journey
-budgets and 420-second generation ones, is tens of minutes with nothing wrong. The last full local
-run on record was **started, killed at forty minutes, and reported no verdict at all** — no pass
-count, no failure list — so the change had to record its end-to-end layer as unrun
-(`your change tracking folder/fix-wall-loads-full-size-staged-image/verification.md`). Two things made it
+**The default local run is a slice.** One worker and many scenarios, with 120-second journey
+budgets and extended budgets for infrastructure-dependent scenarios, is tens of minutes with nothing wrong. The last full local run on record was **started, killed before completion, and reported no verdict at all** — no pass
+count, no failure list — so the change had to record its end-to-end layer as unrun.
+Two things made it
 worse and both are fixed: the root script now streams turbo's output instead of buffering it until
 the task ends, and a run bigger than one feature announces its size and these selectors on its
 first line.
@@ -132,30 +130,30 @@ a layer that was started and killed is **unrun**, not green.
 The recipe:
 
 1. **Create an isolated database.** On the Postgres `DATABASE_URL` points at, create
-   `project_e2e`, then migrate and populate it:
+   a dedicated test database, then migrate and populate it:
 
    ```
-   createdb ... project_e2e
-   DATABASE_URL="<app-postgres>/project_e2e" your-package-manager run --filter your-data-layer db:migrate:deploy
-   DATABASE_URL="<app-postgres>/project_e2e" your-package-manager run db:seed
+   createdb ... <your-project>_e2e
+   DATABASE_URL="<app-postgres>/<your-project>_e2e" your-package-manager run --filter your-data-layer db:migrate:deploy
+   DATABASE_URL="<app-postgres>/<your-project>_e2e" your-package-manager run db:seed
    ```
 
-   **`pnpm db:seed` writes the internal administrator and nothing else**, and there is no
-   command that adds the rest: room types, the catalogue and the demo accounts are the
-   `SEED_CORE_BUNDLE` and `SEED_DEMO_BUNDLE` routines, started from `/admin/jobs`.
+   **The seed command writes the bootstrap administrator and nothing else.** Additional
+   seed data (demo accounts, reference data) should be loaded by the suite's setup project
+   or through an admin endpoint — replace these placeholders with your project's actual
+   seed routines.
 
    **The suite seeds itself, and you do not have to.** `your e2e path/seed.setup.ts` is a setup project
    the `flows` project depends on: it signs in as the bootstrap operator
-   (`project_BOOTSTRAP_ADMIN_EMAIL` / `project_BOOTSTRAP_ADMIN_PASSWORD`) and starts both bundles
-   through `POST /admin/jobs` — the same endpoint the Run button hits — before any scenario
-   runs. So a green run also proves the console can populate an empty database, which is the
-   only way a real environment is ever populated. Set the two bootstrap variables, or the setup
-   fails with the reason — they are the whole configuration now.
+   (bootstrap admin credentials from environment variables) and runs the
+   seed routines through the admin API before any scenario runs. So a green run also proves the
+   application can populate an empty database, which is the only way a real environment is
+   ever populated. Set the two bootstrap variables, or the setup fails with the reason — they
+   are the whole configuration now.
 
-   Demo data is required — the sign-in flows use the seeded credential (`user@demo.local` /
-   `demo-password-123`) — and it no longer needs asking for: the seed demo data flag has been
-   removed, and the demo routine writes its rows whenever it is run. `db:ops` migrates and seeds
-   the operator only; it no longer populates either.
+   Demo data is required — the sign-in flows use the seeded credential (replace with your
+   project's demo user, e.g. `user@example.local` / a known demo password) — and the demo
+   routine writes its rows whenever it is run.
 
 2. **The rate limit is raised for you — unless you started the servers.**
    `playwright.config.ts` passes `API_RATE_LIMIT_PER_MINUTE: '2000'` to the API it starts,
@@ -164,7 +162,7 @@ The recipe:
    "Too many requests just now"*, which reads as a broken product. So set it yourself **only** when
    `reuseExistingServer` is about to pick up an API you started — which is the common case locally.
    The sign-in cap is a different thing and is never raised: it is a constant in your configuration package, and
-   `lib/suite.ts` gives each test its own `x-forwarded-for` instead.
+   the test suite fixture gives each test its own forwarded address instead.
 
 3. **Run with the e2e environment.** Playwright's `webServer` starts the API and client
    itself (api first — the order is load-bearing: the client's readiness probe resolves the
@@ -172,7 +170,7 @@ The recipe:
    environment:
 
    ```
-   DATABASE_URL="<app-postgres>/project_e2e" API_RATE_LIMIT_PER_MINUTE=2000 your e2e test command journeys/sharing
+   DATABASE_URL="<app-postgres>/<your-project>_e2e" API_RATE_LIMIT_PER_MINUTE=2000 your e2e test command journeys/sharing
    ```
 
    The selector goes on the end, and the environment is the same whether the run is one feature
@@ -180,11 +178,11 @@ The recipe:
 
    The runner reads the repo `.env` itself (`process.loadEnvFile`), which is why a shell variable
    still wins: it does not override what is already in the environment. That matters because the
-   `@generation` scenarios decide whether to run by reading `GENERATION_QUEUE_URL`,
-   `OPENAI_API_KEY` and `AWS_ENDPOINT_URL` — a runner that cannot see them skips the product's
-   central feature and the run goes green having asserted nothing.
+   the scenarios tagged for optional infrastructure decide whether to run by reading external service env vars
+   (e.g. queue URLs, API keys, cloud storage endpoints) — a runner that cannot see them skips
+   the product's central feature and the run goes green having asserted nothing.
 
-   `reuseExistingServer` is on locally, so anything already serving `:3000`/`:3001` is used
+   `reuseExistingServer` is on locally, so anything already serving on the configured ports is used
    instead — including the docker dev stack, if it is up. That convenience is also the trap:
    servers started with the dev `DATABASE_URL` are writing to the dev database, not the e2e database,
    and the run is no longer isolated. Start the servers with the e2e environment, or stop
@@ -214,8 +212,7 @@ The recipe:
 
 **Stop the dev servers before `your validation command`.** The api auth specs share the real
 `DATABASE_URL` with running dev servers and time out under contention
-("Hook timed out in 10000ms" in `auth-under-prefix.test.ts` / "Test timed out in 5000ms" in
-`auth.test.ts`). Distinct from the flake below — this one is real contention, and it goes
+(for example, hook or test timeouts in auth/session specs). Distinct from the flake below — this one is real contention, and it goes
 away when the servers are down.
 
 **The machine-load flake.** `your validation command` intermittently fails on a *random* package with

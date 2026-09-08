@@ -14,8 +14,8 @@ layer so a complaint can say which one it is about.
 ## 1. The pipeline, one line
 
 ```
-externals ──▶ lambda ──▶ queue ──▶ db ──▶ api ──▶ next-be ──▶ next-fe ──▶ routing ──▶ page ──▶ features ──▶ ui/ds
-   (S3, upstream system) (worker)  (SQS)   (PG)  (your web framework)  (RSC/Actions)  (client leaves)   (app router)    (stores/hooks)  (composites)
+externals ──▶ worker ──▶ queue ──▶ db ──▶ api ──▶ next-be ──▶ next-fe ──▶ routing ──▶ page ──▶ features ──▶ ui/ds
+   (object storage, external systems) (worker)  (queue)   (PG)  (your web framework)  (RSC/Actions)  (client leaves)   (app router)    (stores/hooks)  (composites)
 ```
 
 Data descends left-to-right and down. Change travels right-to-left through named actions. Nothing in
@@ -26,16 +26,16 @@ the database; the browser never reaches the API directly.
 
 | Layer | Holds | The one rule |
 |---|---|---|
-| **externals** | S3 objects, upstream system, third parties | touched only behind a typed boundary — the S3 presign hop, `your integration package`, never raw |
-| **lambda / worker** (`apps/ai`) | the generation pipeline | the same code locally and in Lambda; loads its rows from the DB, never from the API |
-| **queue** (SQS) | generation jobs the API enqueued | nobody but the worker consumes; the client polls status, it does not hold a queue handle |
+| **externals** | Object storage, external systems, third parties | touched only behind a typed boundary — the presign hop, `your integration package`, never raw |
+| **worker** | Background job processing | the same code locally and in production; loads its rows from the DB, never from the API |
+| **queue** | Jobs the API enqueued | nobody but the worker consumes; the client polls status, it does not hold a queue handle |
 | **db** (Postgres + your ORM) | the source of truth for everything persisted | one migration per PR; your project's architectural decisions |
 | **api** (your web framework) | the read/write surface over the DB | every route declares a response schema — that is what keeps hashes out of responses; business logic in `services/` (`api-contract`) |
 | **next-be** | Server Components + Server Actions | reads, mutates, revalidates; forwards the session cookie; the only client of your web framework (your project's architectural decisions) |
 | **next-fe** | client leaves (`"use client"`) | interaction and presentation of committed data; never the source of truth |
 | **routing** | the URL | the URL is a *value home* (rule 2): reload/shared-link/back reproduces it; allow-listed reads |
 | **page** | the thin route | fetches, validates the step, redirects, passes props down — a page that grew logic is a feature in the wrong place |
-| **features** | stores, hooks, containers per feature | the page store, the flow hook, `use-generation` — the only layer that owns interaction state |
+| **features** | stores, hooks, containers per feature | the page store, the flow hook, feature-specific hooks — the only layer that owns interaction state |
 | **context / store / hooks** | shared-read state; screen interaction; data bindings | store = vanilla factory, per feature, never global; context = read-widely/write-never; hooks bind the store to React |
 | **api (your API package)** | the typed data layer to your web framework | the client side of the wire agreement, re-exported through `your API package`, never `your contract package` directly |
 | **ui / ds** | composites and primitives | props in, facts out — no fetches, no `next/*`, and no store reached in from outside; a screen may own a per-mount view store in its own folder (your project's architectural decisions). The pixel baseline depends on it (your project's architectural decisions) |
@@ -118,12 +118,12 @@ import nothing upward at all — the guard enforces it.
 
 ## 6. Worked examples
 
-- **A room's selected style.** The database (rule 1): the Room row owns `styleId`; `StyleStep`
+- **A resource's selected option.** The database (rule 1): the row owns the selection; the step component
   receives options as props; selecting calls a Server Action → `revalidatePath`. No store, no query.
 - **The wizard step.** URL (rule 2) for committed progress + a feature store for the in-flight
-  preview — the split that made the relaod bug impossible.
-- **The generation's status while generating.** TanStack Query (rule 3): a poll the user is not
-  driving; the Generating screen subscribes, not stores.
+  preview — the split that made the reload bug impossible.
+- **A long-running job's status while processing.** TanStack Query (rule 3): a poll the user is not
+  driving; the processing screen subscribes, not stores.
 - **The signed-in identity.** The session store (rule 4), hydrated from the server render, never
   fetched — your session-state decision.
 - **The locale and toasts.** Context (rule 5): read by everything, written essentially never.

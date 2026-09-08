@@ -103,7 +103,7 @@ complexity 45 — so the axis's job is the part a count cannot do:
   an exemption wearing a debt record's clothes. The ledger is for what was already there
 - **a split that drew the wrong seam.** Six widgets is not automatically better than one screen.
   Ask what any single future change now touches: if it touches four of the six, the seam is wrong
-- **a screen store holding a server answer** — a product, a project, a generation. That is your project architectural decisions'
+- **a screen store holding a server answer** — a domain entity or a server-side resource. That is your project architectural decisions'
   stated reversal condition, and the value's home was rule 1
 - **a widget reused across screens that reads one screen's context.** It has quietly become that
   screen's widget, and the second screen will discover it

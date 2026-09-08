@@ -1,6 +1,6 @@
 ---
 name: state-management
-description: "project state and data-flow conventions — where every value lives, across the whole pipeline. Load this when deciding where a piece of state belongs (server, database, Server Action, URL, TanStack Query, Context, a Zustand store, props), when adding or reviewing a store, when the server→client seam needs a rule (memoized readers, per-mount seeding, parallel fetches), or when a store is being seeded from a client fetch (a page store, a feature store, the session store in your store package), when wiring a hook or a feature container to data, when a value arrives in the wrong place or a screen is not re-rendering after a mutation, or when questioning the layering of the app: the one-way data flow from externals (S3, the queue, upstream system) through the database and the API into the Next server, then down through routing and pages into features — context, stores, hooks — and finally props into your UI package and your component library. Also load it for separation-of-concerns and clean-architecture questions, for splitting an oversized screen into widgets and deciding whether their shared behaviour belongs in a screen store or a screen-local context, for zustand or context inside your UI package path, and for the anti-patterns your guard checks scan for. It complements app-development (the Next-side mechanics) and api-contract (the wire)."
+description: "project state and data-flow conventions — where every value lives, across the whole pipeline. Load this when deciding where a piece of state belongs (server, database, Server Action, URL, TanStack Query, Context, a Zustand store, props), when adding or reviewing a store, when the server→client seam needs a rule (memoized readers, per-mount seeding, parallel fetches), or when a store is being seeded from a client fetch (a page store, a feature store, the session store in your store package), when wiring a hook or a feature container to data, when a value arrives in the wrong place or a screen is not re-rendering after a mutation, or when questioning the layering of the app: the one-way data flow from externals (object storage, the queue, external systems) through the database and the API into the Next server, then down through routing and pages into features — context, stores, hooks — and finally props into your UI package and your component library. Also load it for separation-of-concerns and clean-architecture questions, for splitting an oversized screen into widgets and deciding whether their shared behaviour belongs in a screen store or a screen-local context, for zustand or context inside your UI package path, and for the anti-patterns your guard checks scan for. It complements app-development (the Next-side mechanics) and api-contract (the wire)."
 ---
 
 # project state and data flow
@@ -76,7 +76,7 @@ the mechanical half — a `*-store.ts` file stays a plain module, whichever kind
 
 - it imports no React-bound `zustand` (the binding is `createStore` from `zustand/vanilla`), no
   `react`, and carries no `'use client'` — the hook file owns all three;
-- the check is bans-only by design: a session store or an S3 store that is nothing to do with
+- the check is bans-only by design: a session store or a storage client that is nothing to do with
   zustand is simply untouched.
 
 The store holds state and transitions; **routing is not the store's concern.** The wizard's
@@ -111,8 +111,8 @@ is the owning document. Ask in order:
 Three constraints are what make this a carve-out rather than a hole in
 your project's architectural decisions:
 
-- **View state only** — which dialog is open, what it was opened for. A store holding a product,
-  a project or a generation means the answer was rule 1, exactly as before.
+- **View state only** — which dialog is open, what it was opened for. A store holding a domain entity
+  or a server-side resource means the answer was rule 1, exactly as before.
 - **Seeded from props, per mount** — so a story still describes every state the screen can be in.
 - **Local by construction** — created by the screen, unreachable from outside it. `your store package`, an
   `your app path` feature store and a query hook stay banned; `ui-stays-presentational` is unchanged

@@ -7,12 +7,12 @@ description: Writing and repairing project's end-to-end flows as BDD — turning
 
 An end-to-end flow is the only test in this repository that can see a **seam** — a failure
 living between two layers that each pass their own tests. It is also the only one a person
-outside engineering can read, and since 24 August 2026 that is not an accident: the flows are
-**Gherkin**, run by [playwright-bdd](https://github.com/vitalets/playwright-bdd), and the
+outside engineering can read. When flows are written in
+**Gherkin** and run by [playwright-bdd](https://github.com/vitalets/playwright-bdd), the
 document a run produces has scenarios and Given/When/Then in it rather than locators.
 
-Those two properties are the same property. A seam is described in business terms — "the agent
-gives the room a direction and a refined design comes back" — and the layers underneath are the
+Those two properties are the same property. A seam is described in business terms — "a user
+submits an order and receives a confirmation" — and the layers underneath are the
 implementation detail that keeps failing between themselves.
 
 This skill is the middle of three. `tdd` decides **whether** a claim belongs in this mode;
@@ -32,7 +32,7 @@ Read this table before adding a rule here. A rule that belongs to one of these l
 | Whether this claim needs `e2e` at all, and the RED→GREEN order | `tdd` |
 | The four-viewport matrix the component suites measure against, and why CI runs the jsdom layer alone | [docs/engineering/testing.md](../../../docs/engineering/testing.md) |
 | Which of the seven directories under `features/` a new flow goes in, and the five rules the split rests on | [your e2e path/AGENTS.md](../../../your e2e path/AGENTS.md) |
-| What each feature contains, the tag vocabulary's current membership, and the three things sharing deliberately does not prove | [your e2e path/README.md](../../../your e2e path/README.md) |
+| What each feature contains, the tag vocabulary's current membership, and the three things a shared-resource flow deliberately does not prove | [your e2e path/README.md](../../../your e2e path/README.md) |
 | Everything after a defect is confirmed — diagnosis, change folder, fix | `bugfix` |
 
 ## The five layers, and what may go in each
@@ -70,7 +70,7 @@ Four things follow from that split and none of them are negotiable:
 A flow comes from a **scenario**, never from a screen — and it comes **first**. Every typed change
 writes `flows.md` immediately after its proposal, before the interface, the specs and the tasks,
 and task 1.1 is the flow: written, run, and its outcome recorded before the layer is built
-(`your specification tool folder/schemas/*/schema.yaml`, your project's architectural decisions's amendment of 30 August 2026). A flow authored after
+(`your specification tool folder/schemas/*/schema.yaml`, your project's architectural decisions). A flow authored after
 the code it checks proves that the code passes it, not that it would have caught the code being
 wrong.
 
@@ -117,10 +117,10 @@ scenario has to be visible in the scenario**, not buried in a condition inside a
 | Tag | What the hook does | Why the tag rather than an `if` |
 |---|---|---|
 | `@journey` `@roles` `@internal` `@cross-cutting` | 120s budget | 15s is sized for a warm route; a journey walks several, each compiling on first hit |
-| `@generation` | 420s budget; skips with a reason when the stack is absent | A submitted direction with no worker stays `QUEUED` forever, which reads as a hang |
-| `@spends` | **Excluded from `your e2e test command`** by its own `--grep-invert`; `your e2e test command:spends` is what runs it | It calls a model. Roughly fifty pence a run, and a reader deserves to know |
-| `@money` | Nothing — a label | Marks a scenario asserting something must NOT spend. These cost nothing and are the only guard against a regression that bills silently |
-| `@chat` | **Excluded from `your e2e test command`** by the same `--grep-invert`; `your e2e test command:chat` runs its unbilled half | Applied to a whole assistant FEATURE, never a scenario. A deliberate hole in the default run — see your e2e path/README.md, which owns the reasoning and the reversal condition |
+| `@external` | Extended budget; skips with a reason when required external infrastructure is absent | A scenario waiting on a worker, webhook, queue, or third-party callback otherwise reads as a product hang |
+| `@spends` | **Excluded from `your e2e test command`** by its own `--grep-invert`; `your e2e test command:spends` is what runs it | It calls an expensive external service, and a reader deserves to know |
+| `@billing` | Nothing — a label | Marks a scenario asserting something must NOT spend. These cost nothing and are the only guard against a regression that bills silently |
+| `@optional-infra` | **Excluded from `your e2e test command`** by the same `--grep-invert`; a named script runs it when the infrastructure is configured | Applied to a whole feature area that depends on infrastructure the default run does not provide; the README owns the reversal condition |
 | `@known-issue` | Skips, with the blocker named | The behaviour is not built. See below |
 | `@mode:default` | Nothing in `hooks.ts` — it is **playwright-bdd's own** tag, and it makes the feature's scenarios run one at a time without skipping the ones after a failure | A feature whose scenarios take the catalogue out from under each other cannot run beside itself. `serial` would stop the business report at the first red line, which is the one report nobody can act on |
 | `@layout` | Nothing — a label | Marks the scenarios whose subject IS a width, so a run can be narrowed to them. The width itself is in the sentence |
@@ -138,8 +138,8 @@ the failure names the width instead of reporting under a project name that did n
 claim genuinely is the matrix, that is a **`Scenario Outline` with an `Examples` table**:
 `cross-cutting/sign-in-layout.feature` lists the four viewports as rows, so the widths are visible
 to the reader and only the scenarios that are about width pay for them — which is precisely what a
-device project could not do. `journeys/sharing.feature` opens the recipient's context with
-`hasTouch` for the two scenarios whose subject is the device, so a touch claim needs no second
+device project could not do. A shared-resource feature can open a second context with
+`hasTouch` for the scenarios whose subject is the device, so a touch claim needs no second
 engine either. Geometry against a committed baseline is still the pixel and visual modes' —
 `tdd` says which.
 
@@ -157,17 +157,17 @@ cannot name is a rule that gets relaxed the first time it is inconvenient.
 
 | Rule | The failure it defends |
 |---|---|
-| `test` and `expect` come from `../fixtures/index.js`, which merges playwright-bdd's instance with `lib/suite.ts` using `mergeTests` | `suite.ts` carries the per-test `x-forwarded-for` fixture. Sign-in is capped at 30 per address per 15 minutes and this suite signs in hundreds of times; without it the run dies partway through with the API answering 429 to its own session reads. It is an `auto` fixture, so nothing declares a dependency on it and **nothing fails loudly when it is dropped** — spreading a test object instead of merging it loses it silently |
+| `test` and `expect` come from a shared fixtures file that merges playwright-bdd's instance with project-specific test helpers | The merged fixture carries per-test rate-limit bypass (e.g. an IP override header). Without it, sign-in-heavy suites hit the API's rate limit partway through and fail with 429. It is typically an `auto` fixture, so nothing declares a dependency on it and **nothing fails loudly when it is dropped** — spreading a test object instead of merging it loses it silently |
 | Navigate **relative**: `goto('sign-in')` | Playwright resolves with the WHATWG URL API, so `goto('/sign-in')` discards the base path entirely and your web framework 404s. `playwright.config.ts` explains the load-bearing trailing slash |
-| Take `basePath` from `../playwright.config.js`; never write a prefix | The prefix is unagreed configuration ([open question 1](../../../docs/product/open-questions.md)) and that config is one of four modules the `url-prefix` guard allow-lists |
+| Take `basePath` from the Playwright config; never write a prefix | The prefix is deployment configuration, so a hardcoded value can pass locally and fail only behind the real path. Keep the allow-list in your URL-prefix guard narrow |
 | Locate by **role**, then label, then text the component owns. A structural selector is the last rung and carries a comment saying why no role exists | A test id survives a layout being rebuilt wrongly, and noticing exactly that is the point. The three structural selectors in `pom/` each name why: a visually-hidden file input, a link whose only name is an opaque id, a table cell addressed by position |
-| **Scope a role inside its region** — `getByRole('form').getByRole('alert')` | your web framework injects a route announcer (`role="alert"`) into every page. A bare alert role matches it, so `toBeVisible()` passed on pages showing no message and `toBeHidden()` could never pass — half of `authentication` was green for the wrong reason |
+| **Scope a role inside its region** — `getByRole('form').getByRole('alert')` | Some frameworks inject route announcers or global live regions into every page. A bare alert role can match the framework element, so visibility assertions pass on pages showing no message or fail for the wrong reason |
 | Pair a submit with the response it causes: `Promise.all([waitForResponse, click])` | The Server Action is what carries the API's `Set-Cookie` onto a response the browser receives. Returning at the click races an in-flight submission. Polling assertions hide the race; anything reading state once, like `context.cookies()`, does not |
-| **`pressSequentially`, never `fill`, on the refine composer** | It is a ProseMirror contenteditable. `fill` sets the node's text directly, ProseMirror dispatches no transaction, the document stays empty and Enter submits nothing — the scenario then waits out its whole budget on a request that was never going to be made |
+| Type through rich text editors the way a user does | Many contenteditable editors update internal state only through input transactions. Directly setting text can leave the editor's document empty, so submit actions wait on a request that was never sent |
 | **Clear a file input before re-setting it** | Setting the same path onto an input that already holds it fires no `change` event, so a retry is a no-op that spins over the same silence |
 | **After a reload, an interaction may need a retry** | `page.reload()` resolves at `load`; React hydrates later. A `change` event fired in between reaches no listener, the panel sits in its empty state, and the failure reads as "the upload did not complete" against a stack that never received a byte |
 | Create what you assert on, with a **run-unique name**; never assert a count or an empty table | There is no per-worker database isolation yet. A suite that assumed an empty portal passes once and fails for the rest of the day |
-| **Never name a seeded row.** Ask the API for one matching the property you need, and PAGE through | The wall paginates and the suite's own creation scenarios push a dozen projects in front of any named card during a run. Three suites looked for "7 Marlborough Terrace" and failed together partway through every run; the replacement then asked for `limit=50` and found nothing on a database holding twelve staged rooms |
+| **Never name a seeded row.** Ask the API for one matching the property you need, and page through | The suite's own creation scenarios can push seeded records behind pagination during a run. A named lookup then fails together across suites, while an API query for the needed property stays tied to the scenario's intent |
 | Bind a seeded credential to a name; never inline the literal | `password: '<literal>'` is what the `secret-literals` guard looks for, and teaching it to skip test files would blind it to a real one landing in one |
 
 ## Identity, environment, and where a file lands
@@ -180,21 +180,19 @@ all. The caller closes the context.
 **A missing environment variable is a skip with a reason, never a throw at module load.**
 Playwright imports every generated spec before running any of them, so a module-scope throw in a
 step file is a COLLECTION failure: it takes the whole run down — every other feature with it — and
-reports one error about a variable nothing else needs. The withdrawn `user-sync` spec did exactly
-that for `RAILS_SYNC_HMAC_SECRET`, which is empty by default locally, so **the suite could not run
-at all** and the reason looked like a external system problem. Its claims are
-`known-issues/user-mirror.feature` now, and `steps/user-mirror.steps.ts` reads the variable at the
+reports one error about a variable nothing else needs. Treat optional integrations as
+`known-issues/` or skip with a reason, and read the variable at the
 moment it is used. A step file is imported by the generator as well as the runner, so the rule
 applies to `steps/` and `lib/` alike.
 
 **The runner reads the same `.env` the servers do** (`process.loadEnvFile` in
-`playwright.config.ts`), because a runner that cannot see `GENERATION_QUEUE_URL` skips every
+`playwright.config.ts`), because a runner that cannot see the external service env vars skips every
 scenario that would have proved the product's central feature, and the run goes green having
 asserted nothing. A skip nobody asked for is worse than a failure.
 
 **A feature file's directory is a contract, not a filing preference.** It is what a reader of a
-red run is told first — `journeys/` means the product does not work, `internal/` means staff
-cannot curate and no estate agent is affected, `known-issues/` means nothing at all. Putting a
+red run is told first — `journeys/` means the product does not work, `internal/` means an internal
+workflow is broken and no public user is affected, `known-issues/` means nothing at all. Putting a
 flow in the wrong one misreports the failure before anybody opens it;
 [your e2e path/AGENTS.md](../../../your e2e path/AGENTS.md) asks the placement question in order.
 
@@ -208,7 +206,7 @@ performing it yourself does `bugfix`'s work out of order.
 |---|---|
 | **Stale fixture** | The app works by hand, and the value the scenario names is absent from the seed |
 | **Stale locator** | The element is present under a different query — a different role (`alertdialog`, not `dialog`), a different element (`button`, not `link`), an `aria-label` rather than visible text, or a strict-mode violation naming two hits |
-| **Stale specification** | Nothing moved and no element changed: the *journey* was overtaken by a decision record. A wait for `?step=RESULT` outlived the wizard landing on `/details`, and spent its whole budget on a run that had already succeeded |
+| **Stale specification** | Nothing moved and no element changed: the *journey* was overtaken by a decision record. A wait for one route or query state outlived the product landing somewhere else, and spent its whole budget on a run that had already succeeded |
 | **A race** | Intermittent, or one-sided: hydration, a `router.replace` that has not landed, a redirect still in flight. `--repeat-each=5` fails some runs, not all |
 | **Environment** | Every scenario in the file fails identically, or generation fails outright — `test` owns it |
 | **A defect** | Everything else is excluded and the application is genuinely wrong — hand off to `bugfix` |
@@ -253,8 +251,8 @@ removed?** If not, it has stopped being a flow.
 - [ ] Every locator is a role or a label, scoped inside its own region — or the escape hatch is commented with the reason no role exists
 - [ ] Every submit is paired with the response it causes; no bare click after a Server Action
 - [ ] Everything asserted on was created by this scenario under a unique name, or found by asking the API; no assertion depends on the table's prior contents
-- [ ] Every scenario that costs money carries `@spends`, and every one needing the stack carries `@generation`
-- [ ] A new assistant/conversation FEATURE carries `@chat` at the feature level, and the author knows that means the default run does not cover it
+- [ ] Every scenario that costs money carries `@spends`, and every one needing optional external infrastructure carries `@external` or the project's equivalent
+- [ ] A feature that depends on optional infrastructure carries its feature-level tag, and the author knows whether the default run covers it
 - [ ] A claim about a width says the width in the scenario, and a step sets it — no scenario is waiting for a project to supply one
 - [ ] Every non-obvious line names the concrete failure it defends, and ambiguous assertions carry a diagnosis string
 - [ ] A red flow got a verdict, with the observation that produced it, before it got an edit

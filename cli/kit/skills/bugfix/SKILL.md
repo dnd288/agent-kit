@@ -160,9 +160,9 @@ section is a guess about coverage.
 | a component's appearance | your browser tests, plus the journeys that render it | jsdom cannot see geometry (`tdd`) |
 | a route, a service or a response schema | the `journeys/` that call it | Every layer's own tests pass with the seam broken — that is the whole argument for the layer existing |
 | a permission, a role, a session or a cookie | `pnpm test:e2e roles/` | 11 scenarios over four roles: what each may and may not reach. Cheap, and the failure it catches is somebody seeing a surface that is not theirs |
-| the staff console | `pnpm test:e2e internal/` | Staff curation. No estate agent is affected, which is exactly why nobody notices |
+| the staff console | `pnpm test:e2e internal/` | Staff curation. No public user is affected, which is exactly why nobody notices |
 | a migration | the slice above, against a database migrated from the **previous** release | Both releases are live during a deploy |
-| the assistant or the generation pipeline | `pnpm test:e2e:chat`; `@generation` needs LocalStack, a worker and a key | Both are excluded from the default run, so the default run says nothing about them |
+| the assistant or a long-running pipeline | `pnpm test:e2e:external`; scenarios needing optional infrastructure require the relevant services | These are excluded from the default run, so the default run says nothing about them |
 
 **Reseed before the run and select a slice, not the suite.** Leftovers do not look like leftovers —
 three curation flows that pass in 9.7s on a fresh database hung for their full 270s budget on a

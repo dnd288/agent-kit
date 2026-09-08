@@ -252,7 +252,7 @@ change against the Route row is how a review produces findings nobody can act on
 | Server Action | `fe` | `your app path/src/app/<group>/<n>/actions.ts` | `'use server'` — **async functions and nothing else**, or it throws at runtime from a build that typechecked · a unit test · revalidation |
 | Client leaf | `fe` | `your app path/src/app/<group>/<n>/<n>-client.tsx` | `'use client'` at the leaf · `useActionState` for pending and error · a unit test |
 | Slice | `fe` | `your app path/src/app/<group>/<n>/<n>.store.ts` | a plain function, unit tested with no React · scoped to the feature, never global |
-| Flow | **every type** | `your e2e path/features/<split>/<n>.feature` + `your e2e path/steps/<domain>.steps.ts` | Gherkin the business reads, one `Scenario:` per `#### Scenario:` · `test`/`expect` from `../fixtures/index.js` · a sentence with no step fails `bddgen` · written and RUN before the rows below it · PENDING for `ui` and `be`, under `known-issues/` with the blocker named · `e2e` owns the layers below it |
+| Flow | **every type** | `your e2e path/features/<split>/<n>.feature` + `your e2e path/steps/<domain>.steps.ts` | Gherkin the business reads, one `Scenario:` per `#### Scenario:` · `test`/`expect` from your test fixtures · a sentence with no step fails the BDD generator · written and RUN before the rows below it · PENDING for `ui` and `be`, under `known-issues/` with the blocker named · `e2e` owns the layers below it |
 
 One naming rule belongs here because it is not obvious: catalogue keys are `emailLabel`,
 never a bare `password:` — a `password`-named key assigned a string literal trips the
@@ -304,7 +304,7 @@ they transfer:
 - A change whose `flows.md` is missing, or written after `tasks.md`. The order is the mechanism.
 - A `flows.md` naming a selector, a URL, a status code or an id. That is a step, a page object or a spec — `your e2e path/AGENTS.md`'s five layers say which.
 - A `verification.md` whose GREEN is pasted and whose RED is not. A test that was never seen failing is a test nobody has evidence works.
-- A skip reported as a pass — a `@known-issue` scenario counted as coverage, or a `@generation` scenario that skipped because the stack was absent.
+- A skip reported as a pass — a `@known-issue` scenario counted as coverage, or a scenario tagged for optional infrastructure that skipped because the stack was absent.
 - A `ui` or `be` change claiming an end-to-end proof. It has no route or no screen; the claim is the sibling's.
 - A `bugfix` whose `diagnosis.md` carries no observation. That is a hypothesis, and a fix for a hypothesis is how the defect comes back under a different symptom.
 

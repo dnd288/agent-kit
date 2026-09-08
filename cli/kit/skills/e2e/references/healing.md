@@ -26,18 +26,18 @@ tests, it is the environment and `test` owns it. Three shapes, all seen here:
   unfinished one, and the fix is a step definition, never a rewritten sentence.
 - **A module-scope throw in a step file.** Playwright imports every generated spec before running
   any, so a throw while loading takes the whole run down and reports one error about a variable
-  nothing else needs. The withdrawn `user-sync` spec did this for `RAILS_SYNC_HMAC_SECRET` — empty
-  by default locally — so the suite could not run at all and the reason looked like a external system
-  problem. Its claims are `known-issues/user-mirror.feature` now, and the variable is read at the
-  step that uses it.
+  nothing else needs. For example, a module-scope read of an optional integration secret can make the
+  suite fail at import time — empty
+  by default locally — so the suite could not run at all and the reason looked like an infrastructure
+  problem. The fix is to move the variable read to the step that uses it, and park the flow as
+  a `known-issues/` feature until the integration is configured.
 - **The wrong database.** The long-lived `pnpm --filter api dev` in this workspace is usually
   pointed at the e2e database, while the repo `.env` says the dev database. Seeding the wrong one
   produces a full run of failures that all look like product defects. Read it off the process:
   `ps eww $(pgrep -f 'filter api dev' | tail -1) | tr ' ' '\n' | grep ^DATABASE_URL=`.
-- **The provider refusing us.** A run with no credit left sits on the generating screen exactly
-  as a healthy one does, and the scenario spends its whole budget before reporting a timeout. The
-  room's `generationContext` carries the reason —
-  `{"analyseError":{"code":"provider_no_credits"}}` — and `staging.feature` asserts the screen's
+- **An external service refusing the request.** A run against a service with no credit left (or whose credentials are invalid) sits on the processing screen exactly
+  as a healthy one does, and the scenario spends its whole budget before reporting a timeout. If the
+  response carries a reason field, assert the screen's
   own message early so the failure names the environment rather than the product.
 
 ## 2. Then work the five remaining verdicts
@@ -65,16 +65,16 @@ Five green is a race that has been fixed. Five red is not a race.
 
 ## Worked case 1 — a stale locator wearing four disguises
 
-Six scenarios failed across the products and moodboards consoles, each with a different message.
+Six scenarios failed across multiple consoles, each with a different message.
 All four were the same class:
 
-- `getByText('What is missing from the catalogue')` found nothing — the sentence is the coverage
-  strip's `aria-label`, so it is a name a screen reader announces and never text on the page.
+- `getByText('What is missing from the catalogue')` found nothing — the sentence is the section's
+  `aria-label`, so it is a name a screen reader announces and never text on the page.
   `getByRole('region', { name: … })` is the query.
-- `getByRole('dialog')` found nothing — `AdminConfirmDialog` is destructive and carries
+- `getByRole('dialog')` found nothing — the confirm dialog is destructive and carries
   `role="alertdialog"`, which `getByRole('dialog')` does not match.
-- `getByRole('link', { name: 'your web framework page' })` found nothing — the pager renders a `<button>`.
-- `selectOption` threw "Element is not a `<select>`" — the facets are Base UI Selects, so they are
+- `getByRole('link', { name: 'page name' })` found nothing — the pager renders a `<button>`.
+- `selectOption` threw "Element is not a `<select>`" — the facets are custom Select components, so they are
   a `<button role="combobox">` that is opened, and an option that is clicked.
 
 **The tell for all four**: the element is plainly on the screen in the ARIA snapshot, under a
@@ -83,9 +83,9 @@ fix with a comment saying what the element actually is.
 
 ## Worked case 2 — a race that only happened after a reload
 
-`When they upload a photograph of the room` failed with "the photo never became ready", but only
+`When they upload a file` failed with "the upload never became ready", but only
 in the one scenario that reloads the page first. The trace showed the presign Server Action
-running and **no PUT to S3 following** — and then, on closer reading, no presign either: the panel
+running and **no PUT to object storage following** — and then, on closer reading, no presign either: the panel
 was in its empty drop state, showing no preview, no progress and no error.
 
 `setInputFiles` dispatches a `change` event. React hears it only once the page has hydrated, and
@@ -99,13 +99,13 @@ identically.
 
 ## Worked case 3 — a stale specification that cost seven minutes a run
 
-`await page.waitForURL(/\?step=RESULT/i, { timeout: 120_000 })` timed out on a generation that had
+`await page.waitForURL(/\?step=RESULT/i, { timeout: 120_000 })` timed out on a job that had
 succeeded. Nothing had moved and no element had changed: the wizard stopped landing on
-`?step=result` when success started taking the agent to the project's own record at `/details`.
+`?step=result` when success started taking the user to the resource's detail page at a different URL.
 
 The tell is the shape of the failure — a wait that spends its entire budget while the application
 does the right thing. It had also been invisible for weeks, because the scenario skipped on every
-machine that could not see the generation stack's environment variables, and a skip nobody asked
+machine that could not see the required service environment variables, and a skip nobody asked
 for reads as a pass.
 
 Two fixes, not one: the wait was corrected, and `playwright.config.ts` now loads the repo `.env`

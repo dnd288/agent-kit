@@ -124,9 +124,9 @@ so every outward hop has one gate:
 | Hopped boundary | Mechanism | The rule |
 |---|---|---|
 | your web framework API | `your API package` typed service → `apiEndpoint()`, cookie forwarded | Server Components & Actions only; browser never (§4 of `SKILL.md`) |
-| S3 upload | presigned `PUT` minted by the proxy | direct from the browser; never streamed through the app |
-| Generation queue | SQS message enqueued on accept | the worker (`apps/ai`) owns the pipeline; the client polls the status |
-| upstream system | `your integration package` signed internal client | server-to-server only, base URL from config |
+| Object storage upload | presigned `PUT` minted by the proxy | direct from the browser; never streamed through the app |
+| Background job queue | Message enqueued on accept | the worker owns the pipeline; the client polls the status |
+| External systems | `your integration package` signed internal client | server-to-server only, base URL from config |
 | Images/fonts | `next/image` sizing; one font mechanism | §5–6 of `SKILL.md` |
 
 Every wire crossing has a zod contract in `your contract package` (or `your integration package` for server-to-server payloads)
@@ -151,7 +151,7 @@ owns the full data-flow picture). The route renders, the feature holds interacti
 Run this before marking a screen "done":
 
 - **Session-correct.** Server components reading the session forward the cookie; session-bearing
-  routes are under the configured prefix; nothing trusts the upstream system cookie.
+  routes are under the configured prefix; nothing trusts another application's cookie.
 - **URL-truthful.** A reload reproduces the screen; the URL never runs ahead of the database; URL
   values go through an allow-list; back/forward follow.
 - **Loading and error shells.** Every slow segment has `loading.tsx`/`Suspense`; every fallible fetch

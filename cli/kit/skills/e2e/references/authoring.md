@@ -2,7 +2,7 @@
 
 The step-by-step path. `SKILL.md` holds the conventions themselves; this is the order to apply
 them in, worked against flows that are in the repository today —
-`your e2e path/features/journeys/staging.feature` and `your e2e path/features/journeys/refinement.feature`.
+`your e2e path/features/journeys/` contains the user journey features.
 
 ## 1. Read the change for flow-shaped scenarios
 
@@ -45,35 +45,35 @@ Feature: Staging a room
   Background:
     # Only what EVERY scenario in the file needs. A Background that sets up three quarters of
     # them is three quarters of a file in the wrong place.
-    Given 'an estate agent' is signed in
+    Given 'a logged-in user' is signed in
 
   # A `Rule:` is the change's `### Requirement:`. Gherkin has the keyword; use it.
-  Rule: A generation is spent when the agent asks for one, and never by a page load
+  Rule: A job is started when the user submits the form, and never by a page load
 
     # A comment above a scenario carries the requirement id — US-PRJ-06, FR-2.2-D1 — and the
     # failure the scenario exists for. It is what survives the change folder being archived.
-    @money @generation @spends
-    Scenario: Landing on the generating screen does not start a second run
-      Given they have taken the project as far as choosing a style
-      When they choose a style and ask for the design
-      And the design is being generated
-      And they land on the generating screen again
-      Then no further generation was started
+    @billing @external @spends
+    Scenario: Landing on the processing screen does not start a second run
+      Given they have completed the prerequisite steps
+      When they submit the form and a job is queued
+      And the job is being processed
+      And they land on the processing screen again
+      Then no further job was started
 ```
 
 ## 4. Tag it honestly
 
 The tag is how a reader learns what the scenario costs, so it is part of the sentence rather than
-an annotation on it. `@spends` if it calls a model; `@generation` if it needs the stack; `@money` if it asserts
+an annotation on it. `@spends` if it calls an expensive external service; `@external` if it needs optional infrastructure; `@billing` if it asserts
 something must NOT spend. `@mode:default` is playwright-bdd's own, and belongs on a feature whose
 scenarios take the data out from under each other. There is no viewport tag: the suite runs in one
 project, so a scenario is never repeated across a matrix — and a claim that IS about a width says
 the width in its own sentence, with a step that sets it.
 
-**A `@money` scenario usually needs `@spends` too**, and that is not a contradiction. Proving
+**A `@billing` scenario usually needs `@spends` too**, and that is not a contradiction. Proving
 "landing did not start a SECOND run" needs a first run to exist: without one, the pointer is
 empty before and after, they match, and the scenario reports that landing spent nothing — which
-is true and proves nothing. It would go green against a product that could not stage a room at
+is true and proves nothing. It would go green against a product that could not process a job at
 all. Assert the precondition in the Given.
 
 ## 5. Generate, and let the generator tell you what is missing
@@ -95,20 +95,20 @@ A step is the sentence's MEANING in code, and its assertions. Everything else mo
 - anything two layers need → `lib/`
 
 ```ts
-Then('no further generation was started', async ({ result, world }) => {
-  const after = await result.currentGenerationId(requireProjectId(world.projectId));
+Then('no further job was started', async ({ result, world }) => {
+  const after = await result.currentJobId(requireResourceId(world.resourceId));
   expect(
     after,
     // The diagnosis string is not decoration. A failure here has to explain, to somebody who did
     // not write it, why the number mattered — and what it costs when it is wrong.
-    'landing on the generating screen started a NEW generation. A refresh, a typed URL or a restored tab is not a request to stage a room, and each one is a real model call against a real image.',
-  ).toBe(world.generationBefore);
+    'landing on the processing screen started a NEW job. A refresh, a typed URL or a restored tab is not a request to process, and each one costs real money.',
+  ).toBe(world.jobIdBefore);
 });
 ```
 
 Two things a step may never do: construct a page object (take it as a fixture), and read `world`
-without a guard. Every read goes through `requireProjectId`-style guards so a scenario missing a
-Given fails with "this scenario has no project" rather than `undefined is not a string`.
+without a guard. Every read goes through `requireResourceId`-style guards so a scenario missing a
+Given fails with "this scenario has no resource" rather than `undefined is not a string`.
 
 ## 7. Put the reasoning in the page object
 
@@ -117,12 +117,12 @@ standard is that a non-obvious line names the failure it defends:
 
 ```ts
 /**
- * Upload the room photograph and continue.
+ * Upload the file and continue.
  *
  * `setInputFiles` dispatches a `change` event. React only hears it once the page has HYDRATED,
- * and `page.reload()` resolves at `load` — which is earlier. So on a freshly reloaded photo step
+ * and `page.reload()` resolves at `load` — which is earlier. So on a freshly reloaded upload step
  * the file is set, the event fires into a page with no listener, and the panel sits in its empty
- * drop state. The failure reads as "the upload to S3 did not complete" against a stack that never
+ * drop state. The failure reads as "the upload did not complete" against a stack that never
  * received a byte.
  *
  * Retried, and the input is CLEARED before each retry: setting the same path onto an input that
