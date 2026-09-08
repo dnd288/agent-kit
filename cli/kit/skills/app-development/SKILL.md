@@ -215,7 +215,7 @@ first "yes" wins:
 
 **The ladder is the short form.** The full model — the layered data flow from externals down to a
 component, one-way arrows, and why each rule exists — is the **`state-management` skill**
-(`references/data-flow.md`). Load that one when the question is architectural; this ladder when you
+(`../state-management/references/data-flow.md`). Load that one when the question is architectural; this ladder when you
 are deciding the next value.
 
 **The server→client seam adds a pre-step.** SSR owns starting params — a store is never seeded by a

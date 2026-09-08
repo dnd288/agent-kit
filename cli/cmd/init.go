@@ -5,10 +5,11 @@ import (
 	"os"
 	"strings"
 
-	kit "github.com/agent-kit/agent-kit-cli/kit"
 	"github.com/agent-kit/agent-kit-cli/internal/config"
 	"github.com/agent-kit/agent-kit-cli/internal/prompt"
 	"github.com/agent-kit/agent-kit-cli/internal/scaffold"
+	"github.com/agent-kit/agent-kit-cli/internal/skills"
+	kit "github.com/agent-kit/agent-kit-cli/kit"
 	"github.com/spf13/cobra"
 )
 
@@ -151,6 +152,23 @@ func askConfig(cwd string) (*config.ProjectConfig, error) {
 	cfg.IncludeCI, err = prompt.AskConfirm("Include CI templates?", true)
 	if err != nil {
 		return nil, err
+	}
+
+	optional := skills.Optional()
+	if len(optional) > 0 {
+		fmt.Println("\nOptional skills (not installed by default):")
+		for _, s := range optional {
+			fmt.Printf("  - %s — %s\n", s.Name, s.Summary)
+		}
+		for _, s := range optional {
+			yes, confirmErr := prompt.AskConfirm(fmt.Sprintf("Install optional skill %s?", s.Name), false)
+			if confirmErr != nil {
+				return nil, confirmErr
+			}
+			if yes {
+				cfg.OptionalSkills = append(cfg.OptionalSkills, s.Name)
+			}
+		}
 	}
 
 	return cfg, nil

@@ -12,15 +12,16 @@ const ConfigFile = "agent-kit.yaml"
 // ProjectConfig stores the project's agent-kit configuration.
 // Written by `agent-kit init`, read by `agent-kit add`.
 type ProjectConfig struct {
-	ProjectName    string   `yaml:"projectName"`
-	Prefix         string   `yaml:"prefix"`
-	Stack          []string `yaml:"stack"`
-	PackageManager string   `yaml:"packageManager"`
-	Monorepo       bool     `yaml:"monorepo"`
-	IncludeOpenSpec bool    `yaml:"includeOpenSpec"`
-	IncludeClaude  bool     `yaml:"includeClaude"`
-	IncludeHooks   bool     `yaml:"includeHooks"`
-	IncludeCI      bool     `yaml:"includeCI"`
+	ProjectName     string   `yaml:"projectName"`
+	Prefix          string   `yaml:"prefix"`
+	Stack           []string `yaml:"stack"`
+	PackageManager  string   `yaml:"packageManager"`
+	Monorepo        bool     `yaml:"monorepo"`
+	IncludeOpenSpec bool     `yaml:"includeOpenSpec"`
+	IncludeClaude   bool     `yaml:"includeClaude"`
+	IncludeHooks    bool     `yaml:"includeHooks"`
+	IncludeCI       bool     `yaml:"includeCI"`
+	OptionalSkills  []string `yaml:"optionalSkills"`
 	InstalledSkills []string `yaml:"installedSkills"`
 }
 

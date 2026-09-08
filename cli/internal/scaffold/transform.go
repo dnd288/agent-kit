@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/agent-kit/agent-kit-cli/internal/config"
+	"github.com/agent-kit/agent-kit-cli/internal/skills"
 )
 
 // TransformContent replaces generic placeholders in kit content
@@ -30,12 +31,7 @@ func TransformContent(content string, cfg *config.ProjectConfig) string {
 	// Replace skill name prefixes in cross-references
 	// Skills reference each other by name (e.g. "the `review` skill")
 	// When installed, they get prefixed, so update the references
-	coreSkills := []string{
-		"review", "verify", "tdd", "bugfix", "refactor",
-		"spec-workflow", "pr", "e2e", "test", "security",
-		"component-development", "ui-development", "app-development",
-		"api-contract", "state-management", "local-dev", "design",
-	}
+	coreSkills := skills.Names()
 
 	for _, skill := range coreSkills {
 		// Replace backtick-quoted skill references: `review` → `acme-review`

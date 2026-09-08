@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/agent-kit/agent-kit-cli/internal/config"
+	"github.com/agent-kit/agent-kit-cli/internal/skills"
 )
 
 // Scaffold copies kit content into the target project directory,
@@ -91,7 +92,7 @@ func installSkills(kitFS embed.FS, cfg *config.ProjectConfig, targetDir string) 
 		skillName := parts[0]
 
 		// Check if this skill should be installed based on stack
-		if !shouldInstallSkill(skillName, cfg.Stack) {
+		if !shouldInstallSkill(skillName, cfg) {
 			if d.IsDir() && len(parts) == 1 {
 				return fs.SkipDir
 			}
@@ -162,8 +163,14 @@ func installSkills(kitFS embed.FS, cfg *config.ProjectConfig, targetDir string) 
 	return nil
 }
 
-// shouldInstallSkill determines if a skill is relevant for the project's stack.
-func shouldInstallSkill(skillName string, stack []string) bool {
+// shouldInstallSkill determines whether a skill should be installed for this
+// project — optional skills only when opted in, otherwise by stack relevance.
+func shouldInstallSkill(skillName string, cfg *config.ProjectConfig) bool {
+	// Optional skills are installed only when the user opted in.
+	if skills.IsOptional(skillName) {
+		return contains(cfg.OptionalSkills, skillName)
+	}
+
 	// Core methodology skills are always installed
 	coreSkills := map[string]bool{
 		"review":        true,
@@ -189,8 +196,8 @@ func shouldInstallSkill(skillName string, stack []string) bool {
 		"api-contract":          {"Fastify", "Express", "NestJS", "Hono"},
 		"state-management":      {"React", "Vue", "Svelte", "Angular"},
 		"e2e":                   {"Playwright", "Cypress"},
-		"local-dev":             {},  // always install
-		"design":                {},  // always install
+		"local-dev":             {}, // always install
+		"design":                {}, // always install
 	}
 
 	required, exists := stackSkills[skillName]
@@ -202,7 +209,7 @@ func shouldInstallSkill(skillName string, stack []string) bool {
 		return true // no stack requirement
 	}
 
-	for _, s := range stack {
+	for _, s := range cfg.Stack {
 		for _, r := range required {
 			if strings.EqualFold(s, r) {
 				return true
@@ -210,6 +217,16 @@ func shouldInstallSkill(skillName string, stack []string) bool {
 		}
 	}
 
+	return false
+}
+
+// contains reports whether list includes s.
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
 	return false
 }
 
@@ -247,32 +264,12 @@ func installTemplates(kitFS embed.FS, cfg *config.ProjectConfig, targetDir strin
 
 // generateSkillsTable builds a markdown table of installed skills.
 func generateSkillsTable(cfg *config.ProjectConfig) string {
-	skillDescriptions := map[string]string{
-		"review":                "Five-axis code review gate",
-		"verify":                "Adversarial claim verification against specifications",
-		"tdd":                   "RED→GREEN discipline with mode-to-claim mapping",
-		"bugfix":                "inspect→debug→impact→fix→verify loop",
-		"refactor":              "MEASURE→PIN→MOVE→PROVE→RECORD loop",
-		"spec-workflow":         "Typed changes with end-to-end-first ordering",
-		"pr":                    "Five PR types with checklists and conventions",
-		"e2e":                   "End-to-end test authoring and healing",
-		"test":                  "Test mode taxonomy and operational runbook",
-		"security":              "Surface-aware security review",
-		"component-development": "Primitive component development patterns",
-		"ui-development":        "Feature-folder composite UI patterns",
-		"app-development":       "Application routing, data flow, access control",
-		"api-contract":          "Schema-first API design and service purity",
-		"state-management":      "State placement decision ladder",
-		"local-dev":             "Local development environment setup",
-		"design":                "Design system methodology",
-	}
-
 	var sb strings.Builder
 	sb.WriteString("| Skill | Owns |\n")
 	sb.WriteString("|---|---|\n")
 
 	for _, skill := range cfg.InstalledSkills {
-		desc := skillDescriptions[skill]
+		desc := skills.Summary(skill)
 		if desc == "" {
 			desc = skill
 		}

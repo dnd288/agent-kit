@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
-	"strings"
 
+	"github.com/agent-kit/agent-kit-cli/internal/skills"
 	kit "github.com/agent-kit/agent-kit-cli/kit"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ type skillInfo struct {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	skills, err := discoverSkills()
+	discovered, err := discoverSkills()
 	if err != nil {
 		return err
 	}
@@ -35,9 +35,9 @@ func runList(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	categories := map[string][]skillInfo{}
-	order := []string{"Core Methodology", "Development", "Testing", "Operations"}
+	order := skills.CategoryOrder
 
-	for _, s := range skills {
+	for _, s := range discovered {
 		categories[s.category] = append(categories[s.category], s)
 	}
 
@@ -48,7 +48,11 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("  %s:\n", cat)
 		for _, s := range items {
-			fmt.Printf("    %-25s  %s\n", s.name, s.description)
+			name := s.name
+			if skills.IsOptional(name) {
+				name += " (optional)"
+			}
+			fmt.Printf("    %-25s  %s\n", name, s.description)
 		}
 		fmt.Println()
 	}
@@ -84,18 +88,7 @@ func discoverSkills() ([]skillInfo, error) {
 }
 
 func categorizeSkill(name string) string {
-	switch name {
-	case "review", "verify", "tdd", "bugfix", "refactor", "spec-workflow", "pr":
-		return "Core Methodology"
-	case "component-development", "ui-development", "app-development", "api-contract", "state-management", "design":
-		return "Development"
-	case "e2e", "test":
-		return "Testing"
-	case "security", "local-dev":
-		return "Operations"
-	default:
-		return "Other"
-	}
+	return skills.Category(name)
 }
 
 func extractDescription(fsys fs.FS, path string) string {
@@ -104,28 +97,17 @@ func extractDescription(fsys fs.FS, path string) string {
 		return "(no description)"
 	}
 
-	content := string(data)
-
-	// Look for YAML frontmatter description
-	if strings.HasPrefix(content, "---") {
-		end := strings.Index(content[3:], "---")
-		if end > 0 {
-			frontmatter := content[3 : end+3]
-			for _, line := range strings.Split(frontmatter, "\n") {
-				line = strings.TrimSpace(line)
-				if strings.HasPrefix(line, "description:") {
-					desc := strings.TrimPrefix(line, "description:")
-					desc = strings.TrimSpace(desc)
-					desc = strings.Trim(desc, `"'`)
-					// Truncate long descriptions
-					if len(desc) > 80 {
-						desc = desc[:77] + "..."
-					}
-					return desc
-				}
-			}
-		}
+	fm, ok := parseFrontmatter(string(data))
+	if !ok {
+		return "(no description)"
 	}
 
-	return "(no description)"
+	desc := frontmatterField(fm, "description")
+	if desc == "" {
+		return "(no description)"
+	}
+	if len(desc) > 80 {
+		desc = desc[:77] + "..."
+	}
+	return desc
 }
