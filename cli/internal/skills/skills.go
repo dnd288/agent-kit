@@ -21,6 +21,9 @@ type Skill struct {
 	// Optional skills are not installed by default; `init` asks before
 	// installing them and they can be added later with `agent-kit add`.
 	Optional bool
+	// Meta skills are used from the kit source tree and are never scaffolded into
+	// target projects.
+	Meta bool
 	// Summary is a one-line human description for the AGENTS.md table and the
 	// interactive prompts.
 	Summary string
@@ -56,10 +59,13 @@ var All = []Skill{
 	// Operations
 	{Name: "security", Category: "Operations", Summary: "Surface-aware security review"},
 	{Name: "local-dev", Category: "Operations", Summary: "Local development environment setup"},
+
+	// Setup
+	{Name: "agent-kit-init", Category: "Setup", Optional: true, Meta: true, Summary: "Initialize Agent Kit via any coding agent"},
 }
 
 // CategoryOrder is the order categories are displayed by `list`.
-var CategoryOrder = []string{"Core Methodology", "Development", "Testing", "Operations"}
+var CategoryOrder = []string{"Core Methodology", "Development", "Testing", "Operations", "Setup"}
 
 // find returns the registered skill and whether it exists.
 func find(name string) (Skill, bool) {
@@ -95,20 +101,29 @@ func IsOptional(name string) bool {
 	return ok && s.Optional
 }
 
-// Names returns every registered skill name, in registry order.
+// IsMeta reports whether a skill is used from the kit and not installed into projects.
+func IsMeta(name string) bool {
+	s, ok := find(name)
+	return ok && s.Meta
+}
+
+// Names returns every installable (non-meta) skill name, in registry order.
+// Used by scaffold.TransformContent to prefix cross-skill references.
 func Names() []string {
-	names := make([]string, len(All))
-	for i, s := range All {
-		names[i] = s.Name
+	var names []string
+	for _, s := range All {
+		if !s.Meta {
+			names = append(names, s.Name)
+		}
 	}
 	return names
 }
 
-// Optional returns the opt-in skills, in registry order.
+// Optional returns the opt-in skills that are installable (not meta), in registry order.
 func Optional() []Skill {
 	var out []Skill
 	for _, s := range All {
-		if s.Optional {
+		if s.Optional && !s.Meta {
 			out = append(out, s)
 		}
 	}

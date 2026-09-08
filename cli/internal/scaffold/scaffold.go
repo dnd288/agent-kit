@@ -166,6 +166,10 @@ func installSkills(kitFS embed.FS, cfg *config.ProjectConfig, targetDir string) 
 // shouldInstallSkill determines whether a skill should be installed for this
 // project — optional skills only when opted in, otherwise by stack relevance.
 func shouldInstallSkill(skillName string, cfg *config.ProjectConfig) bool {
+	if skills.IsMeta(skillName) {
+		return false
+	}
+
 	// Optional skills are installed only when the user opted in.
 	if skills.IsOptional(skillName) {
 		return contains(cfg.OptionalSkills, skillName)

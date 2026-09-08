@@ -10,6 +10,7 @@ import (
 	kit "github.com/agent-kit/agent-kit-cli/kit"
 	"github.com/agent-kit/agent-kit-cli/internal/config"
 	"github.com/agent-kit/agent-kit-cli/internal/scaffold"
+	"github.com/agent-kit/agent-kit-cli/internal/skills"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,10 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	if !skillExists(skillName) {
 		return fmt.Errorf("unknown skill %q; run `agent-kit list` to see available skills", skillName)
+	}
+
+	if skills.IsMeta(skillName) {
+		return fmt.Errorf("skill %q is a meta-skill and cannot be installed into projects; use it from the kit source tree", skillName)
 	}
 
 	cwd, err := os.Getwd()

@@ -49,7 +49,9 @@ func runList(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  %s:\n", cat)
 		for _, s := range items {
 			name := s.name
-			if skills.IsOptional(name) {
+			if skills.IsMeta(name) {
+				name += " (meta)"
+			} else if skills.IsOptional(name) {
 				name += " (optional)"
 			}
 			fmt.Printf("    %-25s  %s\n", name, s.description)
