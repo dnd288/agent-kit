@@ -1,0 +1,151 @@
+name: ui
+version: 2
+description: "Front-end UI - the design-system package primitives and the UI package composites. Props-only, proven against the design."
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: "Why this UI change, and why it is UI-only"
+    template: proposal.md
+    instruction: |
+      Create the proposal that establishes WHY this change is needed, and WHY IT IS THIS TYPE.
+
+      Sections:
+      - **Why**: the problem, in one or two sentences.
+      - **What Changes**: specific, and confined to this type's layer. A bullet naming a file outside it is the signal that the change is mis-typed or should be split.
+      - **Capabilities**: New and Modified, as kebab-case capability names. Each becomes a delta spec.
+      - **Impact**: the workspaces touched, and the sibling changes this one depends on or unblocks.
+
+      **Name the siblings.** A typed change is one movement of a larger feature, and the sequence is ui and be in parallel, then fe, then integration. Naming them is what lets a reviewer see whether this change can be verified on its own.
+
+      Keep it short. The how belongs in design.md.
+
+      A `ui` change owns `the design-system package` and `the UI package` and nothing else. It touches no route, no fetch and no `the shared contract package` import — that boundary is the whole reason this type can ship before any API exists.
+    requires: []
+  - id: flows
+    generates: flows.md
+    description: "The end-to-end features this change is proven by, mapped from the business logic"
+    template: flows.md
+    instruction: |
+      Map the business logic this change serves onto the END-TO-END FEATURES that prove it — **before the interface, the specs or the tasks**. The order is the point: a flow written after the code it checks proves that the code passes it, not that it would have caught the code being wrong.
+
+      For each feature file, state:
+      - **Purpose** — the paragraph that becomes the `Feature:` preamble. What a failure there MEANS, in the business's words.
+      - **Where it lives** — one of the seven directories under `your end-to-end feature directory`, by `your end-to-end testing instructions`'s ordered question. First yes wins.
+      - **The scenarios**, as Gherkin. No selector, no URL, no status code, no id — a feature file naming one is in the wrong layer.
+      - **Tags** — a cost declared in the scenario rather than buried in code. `your end-to-end testing documentation` has the table.
+      - **Status when this change lands** — GREEN, or PENDING with the sibling change that turns it green named.
+      - **Steps** — which sentences `your end-to-end steps directory` already says, and which are owed.
+
+      **A `ui` change turns almost no flow green on its own**: it has no route and no data, so the person in the scenario cannot reach the screen yet. That does not move the flow later — it makes it PENDING. Write it now under `your end-to-end feature directoryknown-issues/`, tagged `@known-issue` with the blocker named in a sentence, and it is still checked: **a sentence with no step behind it fails `bddgen`** before a browser starts. The day the `fe` change lands, the proof is already written.
+
+      **Writing the flow first is also what keeps the props honest.** The scenarios say what a person does; the props are what a caller must pass for that to be possible. A composite drafted from the frame alone acquires props no scenario needs and misses the state one does.
+
+      **What this change cannot prove end to end** is a required section, and for `ui` it is most of it. Name what pins each claim instead — a story, `<n>.quality.test.tsx`, the prop-less default composition.
+    requires:
+      - proposal
+  - id: interface
+    generates: interface.md
+    description: "The props exposed, the contract shapes assumed, and the store read"
+    template: interface.md
+    instruction: |
+      State the seam this change meets the other types at.
+
+      **The props are the load-bearing part.** A composite's prop types ARE the specification of what the API must eventually return, and writing them from the design and the flows rather than from a guessed schema is why `ui` runs before or beside `be` rather than after it.
+
+      **Name the `the API client package` DTO shapes the caller will map in**, even though nothing here imports them — `the UI package` may not, and `ui-stays-presentational` fails a build that tries. Stating the assumption is how the `be` change learns what to build.
+
+      **Store: almost always none.** A composite reads no store; data arrives as props (the state-management decision record). A store import is the same violation as a `fetch` — both give a component an appearance its props do not describe, which is exactly what the flow's step then cannot reach and the quality test cannot assert.
+    requires:
+      - proposal
+      - flows
+  - id: specs
+    generates: specs/**/*.md
+    description: "What the component does, given its props"
+    template: spec.md
+    instruction: |
+      Write the delta specs. Use `## ADDED Requirements` / `## MODIFIED Requirements` / `## REMOVED Requirements` / `## RENAMED Requirements` — a main-spec heading here parses as no deltas at all and the change validates as empty.
+
+      `### Requirement: <name>` with SHALL/MUST, then `#### Scenario: <name>` with WHEN/THEN. **Exactly four hashes** — three parses as prose and the requirement silently carries no scenarios.
+
+      **A ui requirement is about appearance and behaviour GIVEN PROPS.** Every scenario must be observable in a story or a quality test. If a scenario needs a database row or a signed-in user to be true, it belongs to `fe` or `be` — and it is already in `flows.md`, which is where that claim lives.
+
+      Include the prop-less default composition. A screen rendered with no props must produce the design frame's whole composition.
+
+      Carry a `*Test:*` line naming the file that defends each requirement, and a `*Flow:*` line naming the scenario in `flows.md` it serves. **A requirement with no flow is either layer-internal — say so in that line — or a gap.** Both are useful answers; a missing line is not.
+    requires:
+      - proposal
+      - flows
+      - interface
+  - id: design
+    generates: design.md
+    description: "How, when the how is not obvious"
+    template: design.md
+    instruction: |
+      Only when the how is not obvious: a new Base UI part chain, a variant table that needs justifying, an animation or a responsive treatment the frame does not settle.
+
+      Sections: **Context**, **Goals / Non-Goals**, **Decisions** (with alternatives), **Risks / Trade-offs**, **Open Questions**.
+
+      The Figma node ids and the screen manifest are the source, not this file. Cite them.
+    requires:
+      - proposal
+  - id: tasks
+    generates: tasks.md
+    description: "The build list, flow first, ordered within the UI layer"
+    template: tasks.md
+    instruction: |
+      Create the task list. **Follow the template exactly** — the apply phase parses `- [ ]` and tracks nothing else.
+
+      Group under `## numbered headings`, one checkbox per task as `- [ ] X.Y description`, ordered by dependency.
+
+      **Task 1.1 is the flow, and it is a barrier.** Write the Gherkin from `flows.md` and the steps behind it, run the selection, and record what happened in `verification.md`. Nothing else starts until that has. For a PENDING flow the run is `bddgen` accepting every sentence and the `@known-issue` tag skipping it — that is a real check of the sentences and their steps, and it is not a pass.
+
+      Then order WITHIN this type's own layer: tokens and assets, then primitives in `the design-system package`, then widgets, then screens, then the barrels — which are single-writer, because every new item appends to the same file.
+
+      **The last task runs the selection again and records the GREEN** in `verification.md` — for most `ui` changes that is still a skip, and the honest record of it is the deliverable.
+
+      Every task carries what proves it. A task with no verify command cannot be handed to anyone.
+
+      **Every component ships its surfaces**: `<name>.tsx` with its cva table co-located, `<name>.test.tsx`, `<name>.stories.tsx` enumerating every variant, `<name>.quality.test.tsx`. A composite adds a `PseudoLocale` story.
+    requires:
+      - flows
+      - specs
+      - design
+  - id: verification
+    generates: verification.md
+    description: "The proof: RED before, GREEN after, and what was not run"
+    template: verification.md
+    instruction: |
+      Record the proof, from what actually happened rather than what was expected to happen.
+
+      - **The flow**: the feature file, the scenarios, and the command that selects them (`your end-to-end test command <split>/<name>`).
+      - **RED**: pasted. A scenario that would fail with this change already in place is asserting something else. A PENDING flow's red is `bddgen` accepting every sentence and the tag skipping the run — say that in those words. **A skip reported as a pass is the failure this artifact exists to prevent.**
+      - **GREEN**: the same selection passing, with the count, plus `the project validation command` and this layer's own tests.
+      - **What ran and what did not**, by name. If you changed what a component looks like, `pnpm test:browser` is part of this and its absence is a gap worth naming.
+      - **What is still not proven.** For a `ui` change this is usually the whole flow, and saying so is the artifact working.
+    requires:
+      - tasks
+  - id: decision
+    generates: decision.md
+    description: "The durable record, promoted to your decision records on archive"
+    template: decision.md
+    instruction: |
+      Write the decision record, in the project's fixed seven-section form, ONLY if this change made a choice that is hard to reverse, affects both applications, or a later reader would ask why it was done this way (your decision recordsREADME.md). Most changes do not. If none applies, write one line saying so and stop.
+
+      Sections, in this order: **Status / Date / Deciders**, **Context**, **Decision**, **Rationale**, **Alternatives considered**, **Consequences**, **What would change our mind** — the last is mandatory, because a decision with no stated reversal condition cannot be revisited on evidence.
+
+      Do not number it. `openspec archive` assigns the next free number in your decision records.
+
+      Cite requirements by identifier (FR-2.1-01). your product requirements document is the only place those are minted.
+    requires:
+      - proposal
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Build the UI layer. Load `cross-cutting-e2e` for the flow, then `cross-cutting-component-development` for a primitive, `cross-cutting-ui-development` for a composite, `cross-cutting-design` for every colour, size and token.
+
+    **The flow comes first and it is a barrier.** Write the Gherkin and its steps, run the selection, and record what happened before any component is written.
+
+    Do not reach outside `the design-system package` and `the UI package`. If a task seems to need a route or a fetch, it belongs to the `fe` change — stop and say so rather than widening this one. The flow being PENDING is the correct outcome here, not a reason to widen the type.

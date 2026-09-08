@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+# Validate commit message format (conventional commits)
+# Delegates to your guard system if available
+
+set -eu
+
+commit_msg_file="${1:-}"
+
+if [ -z "$commit_msg_file" ] || [ ! -f "$commit_msg_file" ]; then
+  echo "commit-msg: commit message file not found" >&2
+  exit 1
+fi
+
+if command -v pnpm >/dev/null 2>&1 && pnpm run --silent guard:commit-msg -- "$commit_msg_file" >/dev/null 2>&1; then
+  exit 0
+fi
+
+first_line=$(IFS= read -r line < "$commit_msg_file" && printf '%s' "$line")
+
+case "$first_line" in
+  feat:*|fix:*|chore:*|docs:*)
+    exit 0
+    ;;
+  feat\(*\):*|fix\(*\):*|chore\(*\):*|docs\(*\):*)
+    exit 0
+    ;;
+  Merge\ *|Revert\ *)
+    exit 0
+    ;;
+  *)
+    echo "Invalid commit message: $first_line" >&2
+    echo "Expected conventional commit prefix: feat:, fix:, chore:, or docs:" >&2
+    echo "Scoped forms are allowed, for example: feat(api): add endpoint" >&2
+    exit 1
+    ;;
+esac

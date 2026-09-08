@@ -1,0 +1,95 @@
+name: bugfix
+version: 2
+description: "Bug fix - inspect, debug, flow, fix, verify. For a defect whose cause is not obvious from the symptom."
+artifacts:
+  - id: report
+    generates: report.md
+    description: "Inspect: the symptom, the reproduction, the blast radius"
+    template: report.md
+    instruction: |
+      Record what is wrong, **without naming a cause**.
+
+      - **Symptom**: what was observed, in the words of whoever observed it.
+      - **Reproduction**: steps, environment, and how reliably. A defect you cannot reproduce is one you cannot verify you have fixed; if it is intermittent, say how often.
+      - **Blast radius**: who is affected and how badly. Data wrong, data lost, and data displayed wrongly are three different severities.
+
+      **Leave the cause out.** A report that already names one has skipped the debug step, and a fix aimed at a guessed cause is how the real one survives — usually to be rediscovered under a different symptom.
+
+      If the cause IS obvious from the symptom — a typo, a copy change, an off-by-one with a stack trace pointing at it — this change type is ceremony. Go straight to a pull request.
+    requires: []
+  - id: diagnosis
+    generates: diagnosis.md
+    description: "Debug: the root cause, and the observation that proves it"
+    template: diagnosis.md
+    instruction: |
+      Name the specific line, query, condition or assumption that is wrong, **and the evidence that distinguishes it from the alternatives**.
+
+      - **Root cause**: precisely, not approximately.
+      - **The observation that proves it**: the log line, failing assertion, query plan, trace or diff. A diagnosis with no evidence is a hypothesis, and shipping a fix for a hypothesis is how a defect comes back.
+      - **Why it was not caught**: which test should have failed and did not, or which check does not exist. This is the part that stops the class recurring, and it usually names the test to write next — and it is the input to `flows.md`.
+      - **What else depends on this**: the blast radius of the FIX rather than of the defect — every caller of what is about to change, and every consumer relying on today's behaviour. Answer the backward-compatibility question explicitly: a response schema field, a contract enum, a migration running while the previous release is still live, a share link already sent, a session cookie's name or path, a shared e2e step whose sentence other features also say. **"Nothing else calls it" is a fine answer once it has been looked for**, and this section is what chooses the run set in `verification.md`.
+      - **Alternatives ruled out**: what else could produce this symptom, and what ruled each out.
+
+      If the diagnosis shows the specification was wrong rather than the code, **stop**: that is a `ui`, `fe` or `be` change, because a requirement is changing. Say so and open it.
+    requires:
+      - report
+  - id: flows
+    generates: flows.md
+    description: "The scenario that reproduces the defect, in the words the business uses"
+    template: flows.md
+    instruction: |
+      Turn the symptom into the sentence that catches it coming back.
+
+      **If the defect was user-visible, it gets a feature file**: `your end-to-end feature directorydefects/<symptom>.feature`, **named for the symptom rather than the cause** — the cause is fixed and the symptom is what somebody would recognise if it returned. State:
+      - **Purpose** — the `Feature:` preamble: what was observed, and what a red run here means. The reproduction from `report.md` is usually already Gherkin in prose.
+      - **The scenarios** — the reproduction, as `Given` / `When` / `Then`. No selector, no URL, no id.
+      - **Tags** — and their cost.
+      - **Steps** — which sentences `your end-to-end steps directory` already says, and which are owed.
+
+      **If the defect was NOT user-visible** — a service boundary, a query, a schema — say so in a line, name the mode that CAN observe it (`cross-cutting-tdd` owns the mapping: jsdom cannot see geometry, a unit test cannot see a route), and stop. Writing a browser scenario for a claim a unit test can hold is how a suite gets slow and vague.
+
+      **These are the only scenarios that may look narrow.** `defects/` exists to defend one fixed defect each; the seven-directory split is `your end-to-end testing instructions`'s, and this is its exception.
+    requires:
+      - diagnosis
+  - id: tasks
+    generates: tasks.md
+    description: "Fix: the change, and the failing test that comes first"
+    template: tasks.md
+    instruction: |
+      The task list. **Follow the template exactly** — the apply phase parses `- [ ]` and nothing else.
+
+      **The first task is always the failing test — the flow from `flows.md` where the defect was user-visible, the mode `flows.md` named where it was not.** Not the fix. `cross-cutting-tdd` owns which mode can observe the claim: a test written in the wrong mode passes for the wrong reason.
+
+      Then the fix. **Fix the code, not the test and not the guard.** A guard that produces a false positive is a higher-priority bug than one that misses a case, but it is a separate change.
+
+      **The last task runs the same selection again and records the GREEN** in `verification.md`.
+
+      Keep it small. A bugfix that grows a feature is two changes.
+    requires:
+      - diagnosis
+      - flows
+  - id: verification
+    generates: verification.md
+    description: "Verify: RED before, GREEN after, and what is still not proven"
+    template: verification.md
+    instruction: |
+      Record the proof.
+
+      - **The failing test**: path, name, and the mode — the feature file and the `pnpm test:e2e defects/<symptom>` selection where it is a flow.
+      - **RED**: the actual failure output, pasted. "It failed" is not evidence it failed for the right reason — a test that would also fail without the defect is testing something else.
+      - **GREEN**: the same test passing, and whatever else was run.
+      - **What ran and what did not**, by name, and **why that set**: `the project validation command` always; `cross-cutting/` always, because a fix that broke sign-in or the shell makes every other result meaningless; the defect's own feature; and the slices the diagnosis's "What else depends on this" named. A run that was started and killed is UNRUN.
+      - **What is still not proven**: honestly. If the fix is verified in jsdom but the symptom was reported in a browser, say so.
+
+      This artifact is why the type exists. A fix with no RED is a change that might have done nothing.
+    requires:
+      - tasks
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Fix the defect. Load `cross-cutting-bugfix` for the loop, `cross-cutting-tdd` for the mode, and `cross-cutting-e2e` where the defect earned a feature file.
+
+    Write the failing test first and watch it fail. Then fix. Then fill in `verification.md` from what actually happened, not from what was expected to happen.

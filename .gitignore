@@ -1,0 +1,21 @@
+# Go
+cli/agent-kit
+cli/agent-kit-cli
+*.exe
+
+# Dependencies
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+bin/

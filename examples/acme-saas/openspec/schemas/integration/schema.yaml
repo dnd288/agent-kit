@@ -1,0 +1,117 @@
+name: integration
+version: 2
+description: "Integration - wiring the layers into a working application, and turning the pending flows green."
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: "What is being joined, and what proves it"
+    template: proposal.md
+    instruction: |
+      Create the proposal that establishes WHY this change is needed, and WHY IT IS THIS TYPE.
+
+      Sections:
+      - **Why**: the problem, in one or two sentences.
+      - **What Changes**: specific, and confined to this type's layer. A bullet naming a file outside it is the signal that the change is mis-typed or should be split.
+      - **Capabilities**: New and Modified, as kebab-case capability names. Each becomes a delta spec.
+      - **Impact**: the workspaces touched, and the sibling changes this one depends on or unblocks.
+
+      **An integration change MUST name its antecedents** — the `ui`, `fe` and `be` changes it joins, and **the flows they left pending**. One with none is a feature wearing the wrong type, and should be split before it starts.
+
+      This type exists because the seam between layers is the part no layer's own tests can see. Each layer passing is not evidence that they talk to each other.
+    requires: []
+  - id: flows
+    generates: flows.md
+    description: "The pending flows this change turns green, and any the seam still needs"
+    template: flows.md
+    instruction: |
+      **This is the change that collects the debt.** Its antecedents each wrote a flow and left it PENDING under `your end-to-end feature directoryknown-issues/`, tagged `@known-issue` with a blocker. List every one of them here, with the blocker it named and whether this change closes it.
+
+      For each, state:
+      - **The feature file today**, and **where it moves to** — `your end-to-end testing instructions`'s ordered question decides, first yes wins, and the answer is usually `journeys/`. Moving it out of `known-issues/` and deleting the `@known-issue` tag is the deliverable, not a tidy-up afterwards.
+      - **Purpose** — the `Feature:` preamble, revised now that the whole path exists.
+      - **The scenarios** as Gherkin, and which steps are already written.
+      - **Tags** — `@journey`, `@generation`, `@spends`, `@money`. `@spends` is real money, roughly fifty pence a run, and it is excluded from the default run: say which script proves this change.
+      - **What must be true of the environment** — a migrated database, a running API, seeded reference data, LocalStack and a worker for `@generation`.
+
+      **A flow this change authors from scratch is a finding, not a deliverable.** It means the sequence upstream skipped this artifact, so the `ui`, `fe` or `be` change shipped against an imagined path. Write it, and say plainly which change should have.
+
+      **What this change cannot prove end to end** is a required section — the scenarios still gated by an open question, an unbuilt sibling or a stack that is not available. They stay in `known-issues/` with the blocker named. **`known-issues/` is not a parking space for red tests**: a scenario that fails because the application is wrong is a defect and belongs to `cross-cutting-bugfix`.
+    requires:
+      - proposal
+  - id: specs
+    generates: specs/**/*.md
+    description: "The end-to-end flows, as requirements"
+    template: spec.md
+    instruction: |
+      Write the delta specs. Delta headings only. `#### Scenario:` with exactly four hashes.
+
+      **An integration requirement is a flow a person performs**, start to finish, across every layer: sign in, land on the list, create a thing, see it appear, share it. Not a unit of behaviour — those belong to the layer that owns them and are already specified there.
+
+      **Each `#### Scenario:` here has exactly one `Scenario:` in `flows.md`**, and the same words where the words work as Gherkin. The spec is the requirement; the feature file is the proof; a scenario in one and not the other is the gap this type exists to close.
+
+      State what must be true of the environment: a migrated database, a running API, seeded reference data.
+
+      Carry a `*Flow:*` line per requirement naming the feature file and scenario that proves it.
+    requires:
+      - proposal
+      - flows
+  - id: tasks
+    generates: tasks.md
+    description: "The flows first, then the wiring that turns them green"
+    template: tasks.md
+    instruction: |
+      Create the task list. **Follow the template exactly** — the apply phase parses `- [ ]` and tracks nothing else.
+
+      Group under `## numbered headings`, one checkbox per task as `- [ ] X.Y description`, ordered by dependency.
+
+      **Task 1.1 is the flow, and it is a barrier.** Move the pending features out of `known-issues/`, delete the `@known-issue` tags, write the steps that are still owed, run the selection and record the RED in `verification.md`. **The wiring comes second.** A seam patched before anybody watched the scenario fail is a seam nobody has evidence was broken.
+
+      Then: the wiring, then the environment work that lets the flows run unattended.
+
+      **The last task runs the selection again and records the GREEN** in `verification.md`, naming the script — `pnpm test:e2e` excludes `@spends` and `@chat`, so a change touching either must run `test:e2e:spends` or `test:e2e:chat` by hand and say so.
+
+      Every task carries what proves it. A task with no verify command cannot be handed to anyone.
+
+      **Surfaces**: `your end-to-end feature directory<split>/<n>.feature` — Gherkin the business reads — with its sentences implemented in `your end-to-end steps directory<domain>.steps.ts`, locators and their reasoning in `e2e/pom/`, and `acme-test`/`expect` from `../fixtures/index.js`. A sentence with no step behind it fails `bddgen` before a browser starts. One Playwright project, desktop Chromium; a viewport claim says its width in the scenario. The e2e mode is not in CI by default — it needs Chromium, a the database and two servers — so say plainly which selection was run and which was not.
+    requires:
+      - flows
+      - specs
+  - id: verification
+    generates: verification.md
+    description: "The proof: the flows that were pending, now green"
+    template: verification.md
+    instruction: |
+      Record the proof, from what actually happened rather than what was expected to happen. **For this type the artifact is the deliverable** — an integration change with no pasted run has proven nothing that its antecedents had not already claimed.
+
+      - **The flow**: every feature file this change took off `@known-issue`, and the command that selects them.
+      - **RED**: pasted, from before the wiring. A scenario failing at "signed in" says the stack did not come up rather than that the seam is broken — read `cross-cutting/` first when a run is broadly red.
+      - **GREEN**: the same selection passing, with the count, and the script that ran it.
+      - **What ran and what did not**, by name — the slice, the tags excluded, and whether the whole suite ran here or is owed to the `e2e-checks` label on the pull request. **A run that was started and killed is UNRUN**: one change had to record its end-to-end layer as unrun after forty minutes produced no verdict, and that is the honest entry.
+      - **What is still not proven** — what stayed in `known-issues/`, with the blocker.
+    requires:
+      - tasks
+  - id: decision
+    generates: decision.md
+    description: "The durable record, promoted to your decision records on archive"
+    template: decision.md
+    instruction: |
+      Write the decision record, in the project's fixed seven-section form, ONLY if this change made a choice that is hard to reverse, affects both applications, or a later reader would ask why it was done this way (your decision recordsREADME.md). Most changes do not. If none applies, write one line saying so and stop.
+
+      Sections, in this order: **Status / Date / Deciders**, **Context**, **Decision**, **Rationale**, **Alternatives considered**, **Consequences**, **What would change our mind** — the last is mandatory, because a decision with no stated reversal condition cannot be revisited on evidence.
+
+      Do not number it. `openspec archive` assigns the next free number in your decision records.
+
+      Cite requirements by identifier (FR-2.1-01). your product requirements document is the only place those are minted.
+    requires:
+      - proposal
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Turn the pending flows green. Load `cross-cutting-e2e` for the feature files and the six-verdict healing procedure, `cross-cutting-app-development` for the seam, `cross-cutting-tdd` for which mode can observe which claim.
+
+    **The flows come off `@known-issue` first, and are watched failing, before anything is wired.**
+
+    **A defect found here is the point of the type, not a failure of it.** Fix it in the layer that owns it — a patch applied at the integration layer to work around a wrong contract hides the defect rather than resolving it.

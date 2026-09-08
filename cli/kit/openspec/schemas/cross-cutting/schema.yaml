@@ -1,0 +1,338 @@
+name: cross-cutting
+version: 2
+description: the project workflow - proposal → flows → specs → design → tasks → verification → decision (ADR)
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal document outlining the change
+    template: proposal.md
+    instruction: >
+      Create the proposal document that establishes WHY this change is needed.
+
+
+      Sections:
+
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does
+      this solve? Why now?
+
+      - **What Changes**: Bullet list of changes. Be specific about new
+      capabilities, modifications, or removals. Mark breaking changes with
+      **BREAKING**.
+
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<name>/spec.md`. Use kebab-case names (e.g., `user-auth`, `data-export`).
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Check `openspec/specs/` for existing spec names. Leave empty if no requirement changes.
+      - **Impact**: Affected code, APIs, dependencies, or systems.
+
+
+      IMPORTANT: The Capabilities section is critical. It creates the contract
+      between
+
+      proposal and specs phases. Research existing specs before filling this in.
+
+      Each capability listed here will need a corresponding spec file.
+
+
+      Keep it concise (1-2 pages). Focus on the "why" not the "how" -
+
+      implementation details belong in design.md.
+
+
+      This is the foundation - specs, design, and tasks all build on this.
+    requires: []
+  - id: flows
+    generates: flows.md
+    description: "The end-to-end features this change is proven by, mapped from the business logic"
+    template: flows.md
+    instruction: |
+      Map the business logic this change serves onto the END-TO-END FEATURES that prove it — **before the specs, the design or the tasks**. The order is the point: a flow written after the code it checks proves that the code passes it, not that it would have caught the code being wrong.
+
+      **If this change is not user-visible** — infrastructure, deployment, a documentation consistency pass — say so in a line, name what proves it instead, and stop. That is the common case for this type and it is an honest answer.
+
+      Otherwise, for each feature file:
+      - **Purpose** — the paragraph that becomes the `Feature:` preamble. What a failure there MEANS, in the business's words.
+      - **Where it lives** — one of the seven directories under `your end-to-end feature directory`, by `your end-to-end testing instructions`'s ordered question. First yes wins.
+      - **The scenarios**, as Gherkin. No selector, no URL, no status code, no id — a feature file naming one is in the wrong layer.
+      - **Tags** — a cost declared in the scenario rather than buried in code. `your end-to-end testing documentation` has the table.
+      - **Status when this change lands** — GREEN, or PENDING with what turns it green named.
+      - **Steps** — which sentences `your end-to-end steps directory` already says, and which are owed.
+
+      **This type is the cross-cutting fallback, so it owns the whole path.** Unlike `ui` or `be`, there is no sibling change to hand a pending flow to: if this change is user-visible, its flows go green here or the change is not finished.
+
+      **What this change cannot prove end to end** is a required section. Name what pins each remaining claim instead.
+    requires:
+      - proposal
+  - id: specs
+    generates: specs/**/*.md
+    description: Detailed specifications for the change
+    template: spec.md
+    instruction: >
+      Create specification files that define WHAT the system should do.
+
+
+      Create one spec file per capability listed in the proposal's Capabilities
+      section.
+
+      - New capabilities: use the exact kebab-case name from the proposal
+      (specs/<capability>/spec.md).
+
+      - Modified capabilities: use the existing spec folder name from
+      openspec/specs/<capability>/ when creating the delta spec at
+      specs/<capability>/spec.md.
+
+
+      Delta operations (use ## headers):
+
+      - **ADDED Requirements**: New capabilities
+
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated
+      content
+
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason**
+      and **Migration**
+
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+
+      Format requirements:
+
+      - Each requirement: `### Requirement: <name>` followed by description
+
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3
+      hashtags or bullets will fail silently.
+
+      - Every requirement MUST have at least one scenario.
+
+
+      MODIFIED requirements workflow:
+
+      1. Locate the existing requirement in openspec/specs/<capability>/spec.md
+
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all
+      scenarios)
+
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+
+      Common pitfall: Using MODIFIED with partial content loses detail at
+      archive time.
+
+      If adding new concerns without changing existing behavior, use ADDED
+      instead.
+
+
+      Example:
+
+      ```
+
+      ## ADDED Requirements
+
+
+      ### Requirement: User can export data
+
+      The system SHALL allow users to export their data in CSV format.
+
+
+      #### Scenario: Successful export
+
+      - **WHEN** user clicks "Export" button
+
+      - **THEN** system downloads a CSV file with all user data
+
+
+      ## REMOVED Requirements
+
+
+      ### Requirement: Legacy export
+
+      **Reason**: Replaced by new export system
+
+      **Migration**: Use new export endpoint at /api/v2/export
+
+      ```
+
+
+      Specs should be testable - each scenario is a potential test case, and `flows.md`
+      already says which of them a person walks end to end. Carry a `*Flow:*` line per
+      requirement naming that scenario, or saying in that line that the claim is
+      layer-internal. A missing line is the only wrong answer.
+    requires:
+      - proposal
+      - flows
+  - id: design
+    generates: design.md
+    description: Technical design document with implementation details
+    template: design.md
+    instruction: >
+      Create the design document that explains HOW to implement the change.
+
+
+      When to include design.md (create only if any apply):
+
+      - Cross-cutting change (multiple services/modules) or new architectural
+      pattern
+
+      - New external dependency or significant data model changes
+
+      - Security, performance, or migration complexity
+
+      - Ambiguity that benefits from technical decisions before coding
+
+
+      Sections:
+
+      - **Context**: Background, current state, constraints, stakeholders
+
+      - **Goals / Non-Goals**: What this design achieves and explicitly excludes
+
+      - **Decisions**: Key technical choices with rationale (why X over Y?).
+      Include alternatives considered for each decision.
+
+      - **Risks / Trade-offs**: Known limitations, things that could go wrong.
+      Format: [Risk] → Mitigation
+
+      - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
+
+      - **Open Questions**: Outstanding decisions or unknowns to resolve
+
+
+      Focus on architecture and approach, not line-by-line implementation.
+
+      Reference the proposal for motivation and specs for requirements.
+
+
+      Good design docs explain the "why" behind technical decisions.
+    requires:
+      - proposal
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: >
+      Create the task list that breaks down the implementation work.
+
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+
+      checkbox format to track progress. Tasks not using `- [ ]` won't be
+      tracked.
+
+
+      Guidelines:
+
+      - Group related tasks under ## numbered headings
+
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+
+      - Tasks should be small enough to complete in one session
+
+      - Order tasks by dependency (what must be done first?)
+
+
+      Example:
+
+      ```
+
+      ## 1. Setup
+
+
+      - [ ] 1.1 Create new module structure
+
+      - [ ] 1.2 Add dependencies to package.json
+
+
+      ## 2. Core Implementation
+
+
+      - [ ] 2.1 Implement data export function
+
+      - [ ] 2.2 Add CSV formatting utilities
+
+      ```
+
+
+      **Task 1.1 is the flow, and it is a barrier.** Where `flows.md` named one, write the
+      Gherkin and the steps behind it, run the selection, and record what happened in
+      `verification.md` before anything else in the list starts. Where `flows.md` said this
+      change is not user-visible, task 1.1 is whatever it named instead.
+
+      **The last task runs the same selection again and records the GREEN.**
+
+      Reference specs for what needs to be built, design for how to build it.
+
+      Each task should be verifiable - you know when it's done.
+    requires:
+      - flows
+      - specs
+      - design
+  - id: verification
+    generates: verification.md
+    description: "The proof: RED before, GREEN after, and what was not run"
+    template: verification.md
+    instruction: |
+      Record the proof, from what actually happened rather than what was expected to happen.
+
+      - **The flow**: the feature file, the scenarios, and the command that selects them (`your end-to-end test command <split>/<name>`). Where `flows.md` said this change is not user-visible, this section names what it proved instead — the deploy that came up, the guard that now fails, the document that now matches the code.
+      - **RED**: pasted. "It failed" is not evidence it failed for the right reason.
+      - **GREEN**: the same selection passing, with the count, plus `the project validation command`.
+      - **What ran and what did not**, by name. **A run that was started and killed is UNRUN**, and saying so is the difference between a gap and a lie.
+      - **What is still not proven.**
+    requires:
+      - tasks
+  - id: decision
+    generates: decision.md
+    description: The durable decision record, copied into your decision records on archive
+    template: decision.md
+    instruction: |
+      Write the decision record for this change, in the project's fixed seven-section form.
+
+      WHEN THIS ARTIFACT IS REQUIRED. Only when the change made a choice that is hard
+      to reverse, affects both applications, or a later reader would ask why it was
+      done this way (your decision recordsREADME.md). Most changes do not. If none applies, write
+      a single line saying so and why, and stop -- an empty record is worse than no
+      record, and the honest "no decision was made here" is itself useful.
+
+      WHY THIS ARTIFACT EXISTS AT ALL. Stock OpenSpec folds the spec delta into the
+      living specs on archive and leaves design.md behind in the archive folder. The
+      *what* survives and the *why* does not. This project documents and justifies its
+      decisions, so the reasoning is promoted to the numbered series in your decision records
+      rather than left where nobody looks.
+
+      Sections, in this order and no other:
+      - **Status / Date / Deciders**
+      - **Context** -- including the constraints that were given rather than chosen
+      - **Decision**
+      - **Rationale** -- in order of weight
+      - **Alternatives considered** -- and why each was rejected. This is the part that
+        stops the debate being re-run in three weeks
+      - **Consequences** -- including the costs
+      - **What would change our mind** -- MANDATORY. A decision with no stated reversal
+        condition cannot be revisited on evidence
+
+      Do NOT number the record here. `openspec archive` assigns the next free number in
+      your decision records and adds the row to its table, because the number depends on what else
+      merged first and a number chosen at proposal time is stale by the time it lands.
+
+      Cite requirements by identifier (FR-2.1-01), never by pasting client text.
+      your product requirements document is the only place those identifiers are minted.
+    requires:
+      - proposal
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks, mark complete as you go.
+    Pause if you hit blockers or need clarification.
+
+    **The flow comes first and it is a barrier.** Where `flows.md` named one, load `cross-cutting-e2e`,
+    write the Gherkin and its steps, run the selection and record what happened before any
+    other task starts. A cross-cutting change is the one type with no sibling to hand a
+    pending flow to: it goes green here, or the change is not finished.

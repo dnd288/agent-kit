@@ -1,0 +1,149 @@
+name: fe
+version: 2
+description: "Front-end application - the client application App Router routes, actions, mapping and state placement."
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: "Why this route change"
+    template: proposal.md
+    instruction: |
+      Create the proposal that establishes WHY this change is needed, and WHY IT IS THIS TYPE.
+
+      Sections:
+      - **Why**: the problem, in one or two sentences.
+      - **What Changes**: specific, and confined to this type's layer. A bullet naming a file outside it is the signal that the change is mis-typed or should be split.
+      - **Capabilities**: New and Modified, as kebab-case capability names. Each becomes a delta spec.
+      - **Impact**: the workspaces touched, and the sibling changes this one depends on or unblocks.
+
+      **Name the siblings.** A typed change is one movement of a larger feature, and the sequence is ui and be in parallel, then fe, then integration. Naming them is what lets a reviewer see whether this change can be verified on its own.
+
+      Keep it short. The how belongs in design.md.
+
+      An `fe` change owns `the client application routes`. It wires components that already exist to endpoints that already exist. If either does not, name the `ui` or `be` change that provides it — an fe change that has to invent both is a feature wearing the wrong type.
+    requires: []
+  - id: flows
+    generates: flows.md
+    description: "The end-to-end features this change is proven by, mapped from the business logic"
+    template: flows.md
+    instruction: |
+      Map the business logic this change serves onto the END-TO-END FEATURES that prove it — **before the interface, the specs or the tasks**. The order is the point: a flow written after the code it checks proves that the code passes it, not that it would have caught the code being wrong.
+
+      For each feature file, state:
+      - **Purpose** — the paragraph that becomes the `Feature:` preamble. What a failure there MEANS, in the business's words.
+      - **Where it lives** — one of the seven directories under `your end-to-end feature directory`, by `your end-to-end testing instructions`'s ordered question. First yes wins.
+      - **The scenarios**, as Gherkin. No selector, no URL, no status code, no id — a feature file naming one is in the wrong layer.
+      - **Tags** — a cost declared in the scenario rather than buried in code. `your end-to-end testing documentation` has the table.
+      - **Status when this change lands** — GREEN, or PENDING with the sibling change that turns it green named.
+      - **Steps** — which sentences `your end-to-end steps directory` already says, and which are owed.
+
+      **An `fe` change is usually where a PENDING flow starts running for real.** The screen exists and the endpoint exists; this is the change that puts a person in front of them. So the honest status here is often "the tag comes off in the sibling `integration` change, and these scenarios go green in this one" — say which of the two it is, because they are different claims.
+
+      **Reuse the flow the `ui` and `be` siblings already wrote.** If they left one under `known-issues/`, this change inherits it rather than authoring a second. Two feature files describing one journey is the drift `flows.md` exists to prevent.
+
+      **What this change cannot prove end to end** is a required section. Name what pins each remaining claim instead — a unit test on the mapping, a server-side action test, the client leaf's `useActionState` test.
+    requires:
+      - proposal
+  - id: interface
+    generates: interface.md
+    description: "The mapping, and where state lives"
+    template: interface.md
+    instruction: |
+      State the seam. This type owns it: `the API client package` stops at the route boundary and `the UI package` prop types start there.
+
+      **The mapping is the substance.** Which DTO becomes which prop, in which file. Getting a field pair backwards renders perfectly and reads as plausible data — no unit test sees it and the flow does, which is the argument for the flow existing before the mapping.
+
+      **State placement is decided by the state-management decision record's ordered rule, first yes wins**: in the database → a server-rendered route reads it and a server-side action mutates it, then revalidates; should a reload or a shared link reproduce it → the URL; changes without the user acting → a client data-fetching cache; read widely, written almost never → Context; screen-local and complex → a feature slice; otherwise props. The signed-in identity is the one store exception (the session-state decision record).
+
+      **A store holding a copy of a database row means the answer was the first one.**
+    requires:
+      - proposal
+      - flows
+  - id: specs
+    generates: specs/**/*.md
+    description: "What the route does"
+    template: spec.md
+    instruction: |
+      Write the delta specs. Delta headings only — `## ADDED Requirements` and the rest. `### Requirement:` with SHALL, `#### Scenario:` with exactly four hashes.
+
+      **An fe requirement is about the route's behaviour**: what is fetched where, what is rendered for each state, what a mutation revalidates, and what happens when the API refuses. The empty state, the error state and the unauthenticated state are requirements, not edge cases — they are the states a user actually meets, and each should be findable in `flows.md` or deliberately not.
+
+      The browser never calls the API directly: traffic is browser → the client server → the API server. A requirement that assumes otherwise is describing a topology we do not have.
+
+      Carry a `*Test:*` line per requirement, and a `*Flow:*` line naming the scenario in `flows.md` that reaches it end to end. **A requirement with no flow is either layer-internal — say so in that line — or a gap.** Both are useful answers; a missing line is not.
+    requires:
+      - proposal
+      - flows
+      - interface
+  - id: design
+    generates: design.md
+    description: "How, when the how is not obvious"
+    template: design.md
+    instruction: |
+      Only when the how is not obvious: a caching or revalidation strategy, a streaming boundary, a redirect or session-expiry flow, anything touching the URL prefix.
+
+      Sections: **Context**, **Goals / Non-Goals**, **Decisions** (with alternatives), **Risks / Trade-offs**, **Open Questions**.
+
+      The URL prefix is unagreed configuration and never a literal.
+    requires:
+      - proposal
+  - id: tasks
+    generates: tasks.md
+    description: "The build list, flow first, ordered within the client layer"
+    template: tasks.md
+    instruction: |
+      Create the task list. **Follow the template exactly** — the apply phase parses `- [ ]` and tracks nothing else.
+
+      Group under `## numbered headings`, one checkbox per task as `- [ ] X.Y description`, ordered by dependency.
+
+      **Task 1.1 is the flow, and it is a barrier.** Write or adopt the Gherkin from `flows.md`, write the steps behind it, run the selection, and record the RED in `verification.md`. Nothing else starts until that has happened — and here the RED is a real one: the screen exists, the endpoint exists, and the scenario fails because nothing joins them.
+
+      Then order WITHIN this type's own layer: the DTO mapping, then the page, then the server-side action, then the client leaf.
+
+      **The last task runs the selection again and records the GREEN** in `verification.md`.
+
+      Every task carries what proves it. A task with no verify command cannot be handed to anyone.
+
+      **Surfaces**: a flow as `your end-to-end feature directory<split>/<n>.feature` plus its `your end-to-end steps directory<domain>.steps.ts` sentences; a page with its mapping and forwarded session cookie; an actions file holding `'use server'` and **async functions only** — a constant there compiles, passes `next build`, and throws at first render; a client leaf with `'use client'` and `useActionState` for pending and error. Each with a unit test, and a mutation revalidates what it changed.
+    requires:
+      - flows
+      - specs
+      - design
+  - id: verification
+    generates: verification.md
+    description: "The proof: RED before, GREEN after, and what was not run"
+    template: verification.md
+    instruction: |
+      Record the proof, from what actually happened rather than what was expected to happen.
+
+      - **The flow**: the feature file, the scenarios, and the command that selects them (`your end-to-end test command <split>/<name>`).
+      - **RED**: pasted. "It failed" is not evidence it failed for the right reason — a scenario failing at "signed in" says the stack did not come up, not that the mapping is wrong.
+      - **GREEN**: the same selection passing, with the count, plus `the project validation command` and this layer's own tests.
+      - **What ran and what did not**, by name. A local run is a slice; the suite whole is CI's job behind the `e2e-checks` label. **A run that was started and killed is UNRUN.**
+      - **What is still not proven.**
+    requires:
+      - tasks
+  - id: decision
+    generates: decision.md
+    description: "The durable record, promoted to your decision records on archive"
+    template: decision.md
+    instruction: |
+      Write the decision record, in the project's fixed seven-section form, ONLY if this change made a choice that is hard to reverse, affects both applications, or a later reader would ask why it was done this way (your decision recordsREADME.md). Most changes do not. If none applies, write one line saying so and stop.
+
+      Sections, in this order: **Status / Date / Deciders**, **Context**, **Decision**, **Rationale**, **Alternatives considered**, **Consequences**, **What would change our mind** — the last is mandatory, because a decision with no stated reversal condition cannot be revisited on evidence.
+
+      Do not number it. `openspec archive` assigns the next free number in your decision records.
+
+      Cite requirements by identifier (FR-2.1-01). your product requirements document is the only place those are minted.
+    requires:
+      - proposal
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Wire the client. Load `cross-cutting-e2e` for the flow, then `cross-cutting-app-development` for everything under it.
+
+    **The flow comes first and it is a barrier.** Write the Gherkin and its steps, run the selection, watch it fail for the right reason, and record the RED before any mapping, page or action is written.
+
+    Do not change a composite to fit the data — map the data to the composite. If the props genuinely do not fit, that is a `ui` change and this one waits on it.

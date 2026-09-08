@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Run static validation before push (fast checks only)
+# Full test suite is for CI, not push hooks
+
+set -eu
+
+if command -v pnpm >/dev/null 2>&1; then
+  if pnpm run --silent validate:static >/dev/null 2>&1; then
+    pnpm run validate:static
+  else
+    pnpm run lint --if-present
+    pnpm run typecheck --if-present
+  fi
+elif command -v npm >/dev/null 2>&1; then
+  npm run validate:static --if-present
+else
+  echo "pre-push: pnpm or npm is required to run static validation" >&2
+  exit 1
+fi

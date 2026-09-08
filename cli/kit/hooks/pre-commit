@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+# Run lint-staged for pre-commit checks
+
+set -eu
+
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec lint-staged
+elif command -v npx >/dev/null 2>&1; then
+  npx lint-staged
+else
+  echo "pre-commit: pnpm or npx is required to run lint-staged" >&2
+  exit 1
+fi

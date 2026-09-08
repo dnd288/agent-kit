@@ -1,0 +1,161 @@
+# OpenSpec project configuration template.
+#
+# `schema` selects the default workflow. `context` is injected into every
+# artifact's instructions. `rules` are additive per artifact and shared across
+# schemas that use the same artifact id.
+#
+# Keep this file as routing and project policy. Link or name the document that
+# owns a rule rather than duplicating long-form guidance here.
+#
+# Use folded block scalars (`- >-`) for rules. Plain scalars containing `: ` can
+# parse unexpectedly in YAML.
+
+schema: cross-cutting
+
+context: |
+  This is a template OpenSpec configuration for your project. Replace this
+  context with the product, architecture, and workflow facts that every change
+  proposal needs.
+
+  Route to the owner rather than re-deriving:
+  - Product requirements: cite requirement identifiers from your product
+    requirements document. Do not invent requirement IDs in a change.
+  - Scope: cite the document that freezes what is in and out of scope.
+  - Open questions: name unresolved questions that block or shape the change.
+  - Decisions: hard-to-reverse technical choices belong in decision records.
+  - Engineering rules: cite your conventions, security model, state model,
+    testing strategy, and package/workspace boundaries.
+  - Build procedure: cite the command or workflow that proves a change is ready.
+
+  Define the constraints that shape most specifications in this project: route
+  prefixes, package boundaries, data ownership, session/authentication topology,
+  design-system rules, or other invariants reviewers must apply.
+
+  Do not describe work as done without naming the validation that ran. If a
+  check could not run, state which check and why.
+
+rules:
+  proposal:
+    - >-
+      Cite the requirement identifiers this change implements. A proposal that
+      implements nothing traceable is a proposal for something out of scope.
+    - >-
+      Name every open question that gates this change, with what it blocks. Do
+      not propose around an unanswered question by assuming an answer.
+    - >-
+      State which release phase, milestone, issue, or roadmap slice this change
+      belongs to, if the project tracks one.
+  specs:
+    - >-
+      Scenarios are acceptance criteria and should become tests. Write them so a
+      failing test names the requirement it defends.
+    - >-
+      Every requirement carries a `*Flow:*` line naming the scenario in flows.md
+      that reaches it end to end, or stating that the claim is layer-internal and
+      which verification mode holds it.
+    - >-
+      Anything user-facing states responsive behavior across the project's
+      supported viewport matrix. Responsiveness is functional behavior, not
+      polish.
+    - >-
+      Copy and localization rules belong to the project's i18n or content
+      system. A specification states intent, not final strings, unless copy is
+      the change.
+  design:
+    - >-
+      Name the workspace, package, or layer where each piece lands, and respect
+      the project's boundaries. A component that needs data may belong at a
+      different layer than a presentational component.
+    - >-
+      If the design makes a hard-to-reverse choice, record that choice in the
+      decision artifact. design.md explains how; the decision record explains why.
+  tasks:
+    - >-
+      The first task is the flow, and it is a barrier. Write the scenario from
+      flows.md, add the steps behind it, run the selection, and record what
+      happened before implementation starts.
+    - >-
+      Order tasks by dependency within this change's own layer. Cross-layer work
+      should be split unless the cross-cutting schema is intentionally selected.
+    - >-
+      Each task names the skill or procedure to load, the files or areas it may
+      touch, and the command that proves it. A task needing conversation context
+      to make sense cannot be handed over safely.
+    - >-
+      Single-writer artifacts such as barrels, migrations, generated manifests,
+      or shared config should have exactly one task owner per change.
+    - >-
+      A task blocked by an open question stays in the list, marked as blocked and
+      naming the question. Deleting it loses scoped work.
+  decision:
+    - >-
+      Use a stable decision-record structure, including context, decision,
+      consequences, alternatives, and what would change the decision.
+    - >-
+      Do not assign final archive numbering by hand if the archive command or
+      repository process owns numbering.
+  flows:
+    - >-
+      Write business logic first, then the sentences that prove it, then the
+      code. A flow authored after the code proves the code passes it, not that it
+      would have caught the code being wrong.
+    - >-
+      Feature files should avoid selectors, URLs, status codes, and internal IDs.
+      Keep user intent separate from automation details.
+    - >-
+      A flow this change cannot turn green should still be written now as a
+      known issue or pending scenario with the blocker named.
+    - >-
+      `What this change cannot prove end to end` is required. For single-layer
+      changes, name the lower-level checks that pin each claim.
+  interface:
+    - >-
+      This artifact is the seam between UI, client, back-end, and integration
+      changes. State assumptions explicitly because the layers may ship
+      separately.
+    - >-
+      Presentational UI packages should describe the shapes their caller maps in,
+      without importing server contracts directly unless the project allows it.
+    - >-
+      State where state lives and which project rule put it there. Avoid storing
+      copies of database rows in client state unless the architecture permits it.
+  migration:
+    - >-
+      Answer migration questions even when the answer is no. An unanswered
+      migration question is how a schema change reaches review unnoticed.
+    - >-
+      Keep migrations backward compatible with the previous release. State what
+      happens while old and new releases are both live.
+    - >-
+      Do not edit an applied migration unless the project explicitly allows it
+      for disposable local databases.
+  report:
+    - >-
+      Capture symptom, reproduction, and blast radius. Do not name a cause in
+      the report unless the cause is already proven.
+    - >-
+      If the cause is obvious from the symptom, a bugfix change folder may be
+      unnecessary. Go straight to the normal pull-request path.
+  diagnosis:
+    - >-
+      Name the root cause and the observation that proves it. A diagnosis without
+      evidence is a hypothesis.
+    - >-
+      Name which test should have failed and did not. That usually identifies the
+      regression test to add.
+    - >-
+      If the specification was wrong rather than the code, stop and change the
+      relevant requirement through the normal feature/change schema.
+  verification:
+    - >-
+      Paste or summarize the RED output precisely enough to show the test failed
+      for the intended reason.
+    - >-
+      A pending or known-issue flow is not a pass. State exactly how it is marked
+      and what blocker prevents it from turning green.
+    - >-
+      Name what ran and what did not, by selection. A killed or timed-out run is
+      unrun unless it produced a terminal verdict.
+    - >-
+      State what remains unproven. A lower-level check for a user-visible
+      symptom may be useful but still leaves an explicit gap.

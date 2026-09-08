@@ -1,0 +1,158 @@
+name: be
+version: 2
+description: "Back-end - the API application routes and services, the database package, the shared contract package. The data model lives here."
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: "Why this API or data-model change"
+    template: proposal.md
+    instruction: |
+      Create the proposal that establishes WHY this change is needed, and WHY IT IS THIS TYPE.
+
+      Sections:
+      - **Why**: the problem, in one or two sentences.
+      - **What Changes**: specific, and confined to this type's layer. A bullet naming a file outside it is the signal that the change is mis-typed or should be split.
+      - **Capabilities**: New and Modified, as kebab-case capability names. Each becomes a delta spec.
+      - **Impact**: the workspaces touched, and the sibling changes this one depends on or unblocks.
+
+      **Name the siblings.** A typed change is one movement of a larger feature, and the sequence is ui and be in parallel, then fe, then integration. Naming them is what lets a reviewer see whether this change can be verified on its own.
+
+      A `be` change owns `the API application`, `the database package` and `the shared contract package`. It renders nothing. If a screen has to change for this to be useful, that is a `ui` change and this one can still ship first — an endpoint with no caller is a normal intermediate state, an endpoint whose shape was guessed from an imagined screen is not.
+    requires: []
+  - id: flows
+    generates: flows.md
+    description: "The end-to-end features this change is proven by, mapped from the business logic"
+    template: flows.md
+    instruction: |
+      Map the business logic this change serves onto the END-TO-END FEATURES that prove it — **before the interface, the specs or the tasks**. The order is the point: a flow written after the code it checks proves that the code passes it, not that it would have caught the code being wrong.
+
+      For each feature file, state:
+      - **Purpose** — the paragraph that becomes the `Feature:` preamble. What a failure there MEANS, in the business's words.
+      - **Where it lives** — one of the seven directories under `your end-to-end feature directory`, by `your end-to-end testing instructions`'s ordered question. First yes wins.
+      - **The scenarios**, as Gherkin. No selector, no URL, no status code, no id — a feature file naming one is in the wrong layer.
+      - **Tags** — a cost declared in the scenario rather than buried in code. `your end-to-end testing documentation` has the table.
+      - **Status when this change lands** — GREEN, or PENDING with the sibling change that turns it green named.
+      - **Steps** — which sentences `your end-to-end steps directory` already says, and which are owed.
+
+      **A `be` change rarely turns a flow green on its own**: it has no screen, so the person in the scenario cannot reach it yet. That does not move the flow later — it makes it PENDING. Write it now under `your end-to-end feature directoryknown-issues/`, tagged `@known-issue` with the blocker named in a sentence, and it is still checked: **a sentence with no step behind it fails `bddgen`** before a browser starts. The day the `fe` change lands, the proof is already written.
+
+      **What this change cannot prove end to end** is a required section, and for `be` it is most of it. Name what pins each claim instead — a service test, an `app.inject()` test through `buildApp()`. **An endpoint answered correctly in `app.inject()` and never reached by a person is an assumption**, and the flow is where that stops being one.
+    requires:
+      - proposal
+  - id: interface
+    generates: interface.md
+    description: "The contract shapes, and who consumes them"
+    template: interface.md
+    instruction: |
+      State the seam. This type is where `the shared contract package` is written.
+
+      **The shapes fall out of the flows.** A scenario says what a person does and gets; the contract is what has to travel for that to be true. Deriving it the other way round is how an endpoint acquires fields no screen shows and no scenario names.
+
+      **A response schema is a security control, not a type.** the API server serialises through it and drops every field the schema does not name — which is what keeps a password hash, an `ownerId` or an internal timestamp off the wire. Name what the shape deliberately withholds, not just what it carries.
+
+      **Name the consumer.** The `ui` change whose prop types this must satisfy, and the `fe` change that maps between them. A contract with no consumer is a guess about a screen nobody has drawn — and the guess is usually wrong in the direction of exposing more than needed.
+
+      **the project's identifiers are opaque and never foreign keys.** Two databases cannot enforce a constraint between them.
+    requires:
+      - proposal
+      - flows
+  - id: specs
+    generates: specs/**/*.md
+    description: "What the endpoint does"
+    template: spec.md
+    instruction: |
+      Write the delta specs. Delta headings only — `## ADDED Requirements` and the rest. `### Requirement:` with SHALL, `#### Scenario:` with exactly four hashes.
+
+      **A be requirement is about the answer the API gives**: the status, the body, what is refused and what is deliberately indistinguishable from what. Isolation and authorisation are requirements with scenarios, not implementation details — `FR-2.1-03` is satisfied by never having fetched the wrong rows, so write the scenario about the query rather than the result.
+
+      State what a failure looks like. Every failure leaves through `ErrorResponseSchema`, so a handler throwing `AppError` is behaviour a scenario can name.
+
+      Carry a `*Test:*` line per requirement, and a `*Flow:*` line naming the scenario in `flows.md` that reaches it end to end. **A requirement with no flow is either layer-internal — say so in that line — or a gap.** Both are useful answers; a missing line is not.
+    requires:
+      - proposal
+      - flows
+      - interface
+  - id: design
+    generates: design.md
+    description: "How, when the how is not obvious"
+    template: design.md
+    instruction: |
+      Sections: **Context**, **Goals / Non-Goals**, **Decisions** (with alternatives), **Risks / Trade-offs**, **Migration Plan**, **Open Questions**.
+
+      Write one for anything touching sessions, authorisation, an external system, or a query whose shape decides the schema. Business logic lives in plain service functions with no framework types in their signatures; if that is hard here, say why.
+    requires:
+      - proposal
+  - id: migration
+    generates: migration.md
+    description: "Whether this change alters the database, and why it is safe"
+    template: migration.md
+    instruction: |
+      Answer the question even when the answer is no — **"no migration" is the common and correct case, and saying it is what stops a schema change reaching review unnoticed.**
+
+      If there is one: **exactly one per pull request**, backward compatible with the previous release, and **never an edit to an applied migration** — a second migration corrects the first. State what runs against a database still at the previous migration, because during a deploy both releases are live: an additive column needs a default or a nullable type, and a rename is two migrations and a release apart.
+
+      Adding a vector column fires the persistence decision record's flip trigger and the ORM decision must be revisited before, not after.
+    requires:
+      - proposal
+  - id: tasks
+    generates: tasks.md
+    description: "The build list, flow first, ordered within the API layer"
+    template: tasks.md
+    instruction: |
+      Create the task list. **Follow the template exactly** — the apply phase parses `- [ ]` and tracks nothing else.
+
+      Group under `## numbered headings`, one checkbox per task as `- [ ] X.Y description`, ordered by dependency.
+
+      **Task 1.1 is the flow, and it is a barrier.** Write the Gherkin from `flows.md` and the steps behind it, run the selection, and record what happened in `verification.md`. Nothing else starts until that has. For a PENDING flow the run is `bddgen` accepting every sentence and the `@known-issue` tag skipping it — that is a real check of the sentences and their steps, and it is not a pass.
+
+      Then order WITHIN this type's own layer: contracts, then the migration, then services, then plugins, then routes — a plugin lands before the routes that depend on it, or the route sees no decoration at all. Barrels and the migration are single-writer.
+
+      **The last task runs the selection again and records the GREEN** in `verification.md`.
+
+      Every task carries what proves it. A task with no verify command cannot be handed to anyone.
+
+      **Surfaces**: a flow as `your end-to-end feature directory<split>/<n>.feature` plus its `your end-to-end steps directory<domain>.steps.ts` sentences; a contract schema with its inferred type and a case in `core.test.ts`; a service as plain functions with no framework types in the signature, plus its test; a route with a declared response schema, failures thrown as `AppError`, and an `app.inject()` test through `buildApp()`. Session-bearing routes register under the configured prefix — served outside it, `request.session` is a bare object whose `regenerate()` is undefined, a runtime 500 from code that typechecks.
+    requires:
+      - flows
+      - specs
+      - design
+      - migration
+  - id: verification
+    generates: verification.md
+    description: "The proof: RED before, GREEN after, and what was not run"
+    template: verification.md
+    instruction: |
+      Record the proof, from what actually happened rather than what was expected to happen.
+
+      - **The flow**: the feature file, the scenarios, and the command that selects them (`your end-to-end test command <split>/<name>`).
+      - **RED**: pasted. A scenario that would fail with this change already in place is asserting something else. A PENDING flow's red is `bddgen` accepting every sentence and the tag skipping the run — say that in those words. **A skip reported as a pass is the failure this artifact exists to prevent.**
+      - **GREEN**: the same selection passing, with the count, plus `the project validation command` and this layer's own tests.
+      - **What ran and what did not**, by name. The suite whole is CI's job behind the `e2e-checks` label; a local run is a slice. **A run that was started and killed is UNRUN.**
+      - **What is still not proven.** For a `be` change this is usually the whole flow, and saying so is the artifact working.
+    requires:
+      - tasks
+  - id: decision
+    generates: decision.md
+    description: "The durable record, promoted to your decision records on archive"
+    template: decision.md
+    instruction: |
+      Write the decision record, in the project's fixed seven-section form, ONLY if this change made a choice that is hard to reverse, affects both applications, or a later reader would ask why it was done this way (your decision recordsREADME.md). Most changes do not. If none applies, write one line saying so and stop.
+
+      Sections, in this order: **Status / Date / Deciders**, **Context**, **Decision**, **Rationale**, **Alternatives considered**, **Consequences**, **What would change our mind** — the last is mandatory, because a decision with no stated reversal condition cannot be revisited on evidence.
+
+      Do not number it. `openspec archive` assigns the next free number in your decision records.
+
+      Cite requirements by identifier (FR-2.1-01). your product requirements document is the only place those are minted.
+    requires:
+      - proposal
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Build the API and the data model. Load `cross-cutting-e2e` for the flow, then `cross-cutting-api-contract` for everything under it.
+
+    **The flow comes first and it is a barrier.** Write the Gherkin and its steps, run the selection, and record what happened before any contract, service or route is written.
+
+    Write the isolation test against a fake that answers the `where` it is given, not a stub returning fixed rows — a stub hands back the seeded rows whatever the query says, and would pass against a route that had stopped scoping.

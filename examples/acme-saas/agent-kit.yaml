@@ -1,0 +1,29 @@
+projectName: Acme SaaS
+prefix: acme
+stack:
+    - React
+    - Next.js
+    - Playwright
+packageManager: pnpm
+monorepo: true
+includeOpenSpec: true
+includeClaude: true
+includeHooks: true
+includeCI: true
+installedSkills:
+    - app-development
+    - bugfix
+    - component-development
+    - design
+    - e2e
+    - local-dev
+    - pr
+    - refactor
+    - review
+    - security
+    - spec-workflow
+    - state-management
+    - tdd
+    - test
+    - ui-development
+    - verify
