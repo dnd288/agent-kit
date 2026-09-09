@@ -109,6 +109,27 @@ Three rules the schema does not state:
 The step-by-step path from a change folder to a finished feature, with an annotated skeleton, is
 [references/authoring.md](references/authoring.md).
 
+## Scaffolding a new project
+
+When initializing e2e for a project (`agent-kit-init` or `agent-kit add e2e`),
+the templates under `templates/` provide the starting skeleton. The agent copies
+them into the project's e2e path and replaces `your …` placeholders with the
+project's actual values. The scaffold is opinionated:
+
+- `missingSteps: 'fail-on-gen'` is ON — a sentence with no step fails generation
+  before any browser starts, rather than producing a confusing runtime error
+- `aiFix.promptAttachment` is ON — every failure carries a ready-made prompt with
+  the feature, the step, that step's source, and the page's ARIA snapshot
+- One worker locally, four on CI — no per-worker database isolation needed
+- Seed through API, not a script — the suite proves the application can populate
+  itself through its own admin surface
+- 7 feature directories pre-created with the placement question in AGENTS.md
+- Per-test address isolation via carrier-grade NAT — the rate limiter sees each
+  synthetic user at its own address, the way production does
+
+The annotated reasoning behind every `playwright.config.ts` setting is
+[references/config-guide.md](references/config-guide.md).
+
 ## The tags, and why they are not decoration
 
 `steps/hooks.ts` is where a tag becomes behaviour. That indirection is the point: **the cost of a
@@ -116,7 +137,7 @@ scenario has to be visible in the scenario**, not buried in a condition inside a
 
 | Tag | What the hook does | Why the tag rather than an `if` |
 |---|---|---|
-| `@journey` `@roles` `@internal` `@cross-cutting` | 120s budget | 15s is sized for a warm route; a journey walks several, each compiling on first hit |
+| `@journey` `@roles` `@internal` `@cross-cutting` `@capability` | 120s budget | 15s is sized for a warm route; a journey walks several, each compiling on first hit |
 | `@external` | Extended budget; skips with a reason when required external infrastructure is absent | A scenario waiting on a worker, webhook, queue, or third-party callback otherwise reads as a product hang |
 | `@spends` | **Excluded from `your e2e test command`** by its own `--grep-invert`; `your e2e test command:spends` is what runs it | It calls an expensive external service, and a reader deserves to know |
 | `@billing` | Nothing — a label | Marks a scenario asserting something must NOT spend. These cost nothing and are the only guard against a regression that bills silently |
