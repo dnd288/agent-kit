@@ -180,7 +180,12 @@ your-project/
 agent-kit/
 ├── cli/
 │   ├── kit/                     # The methodology content
-│   │   ├── skills/              # 21 process skills + init meta-skill
+│   │   ├── skills/              # 24 process skills + init meta-skill
+│   │   │   ├── e2e/
+│   │   │   │   ├── SKILL.md     # Authoring and healing rules
+│   │   │   │   ├── references/  # config-guide, authoring, healing
+│   │   │   │   └── templates/   # playwright-bdd scaffold (21 files)
+│   │   │   └── .../             # Other skills (SKILL.md + optional references/)
 │   │   ├── templates/           # Root instruction templates
 │   │   ├── claude/              # Claude Code integration
 │   │   ├── openspec/            # Specification schemas
@@ -226,7 +231,7 @@ Skills follow the [Agent Skills format](cli/kit/docs/skill-format.md) — YAML f
 
 | Skill | Owns |
 |---|---|
-| `e2e` | End-to-end test authoring and healing |
+| `e2e` | End-to-end test authoring and healing — includes [scaffold templates](#e2e-scaffold-templates) |
 | `test` | Test mode taxonomy and operational runbook |
 | `scenario-explorer` | Enumerate the case space before writing tests *(optional)* |
 
@@ -274,6 +279,102 @@ loads them based on the trigger text in the `description` frontmatter field.
 
 For other agents, point them to the `.agents/skills/` directory or the specific
 skill file.
+
+## E2E scaffold templates
+
+The `e2e` skill ships scaffold templates under
+[`cli/kit/skills/e2e/templates/`](cli/kit/skills/e2e/templates/) — a working
+[playwright-bdd](https://github.com/vitalets/playwright-bdd) skeleton generalized
+from a production suite (200+ scenarios, 36 features). When `agent-kit add e2e`
+runs, the init agent copies these into your project's e2e path and replaces
+`your …` placeholders with actual values.
+
+### What the scaffold gives you
+
+| Concern | File(s) | What it does |
+|---|---|---|
+| **BDD config** | `playwright.config.ts` | `defineBddConfig` with `missingSteps: 'fail-on-gen'` and `aiFix.promptAttachment`, 4 reporters, seed + flows projects, webServer array |
+| **Dependencies** | `package.json` | `playwright-bdd ^9.2`, `@playwright/test ^1.50`, scripts for bddgen, test, and reports |
+| **Seed through API** | `seed.setup.ts` | Signs in as the bootstrap operator, POSTs to the admin seed endpoint, polls for completion |
+| **Run-scope guard** | `run-scope.reporter.ts` | Warns before a run exceeding 30 scenarios — "this is the pre-merge run, not the loop" |
+| **Test instance** | `fixtures/index.ts` | `mergeTests(bdd, suite)` (not spreading), typed `ScenarioWorld` with guards, POM fixtures |
+| **Tag hooks** | `steps/hooks.ts` | `@journey`→120s, `@generation`→420s, `@known-issue` skip with env-var escape hatch |
+| **Starter steps** | `steps/health.steps.ts` | Given/When/Then for the health feature — the first green run |
+| **Starter POM** | `pom/sign-in.page.ts` | Sign-in page object with locator-reasoning comments |
+| **Address isolation** | `lib/suite.ts` | Per-test `x-forwarded-for` via carrier-grade NAT (100.64.0.0/10) so the rate limiter sees each test at its own address |
+| **Seeded identities** | `lib/accounts.ts` | Bootstrap operator from env vars, 4 demo accounts |
+| **API origin** | `lib/api.ts` | Configurable `API_ORIGIN` and `apiHealthUrl()` |
+| **Health feature** | `features/cross-cutting/health.feature` | 4 cheapest claims: app root, sign-in, API health, client health |
+| **7 directories** | `features/{journeys,roles,internal,capabilities,cross-cutting,defects,known-issues}/` | Pre-created with placement rules |
+| **Placement rules** | `AGENTS.md` | The 5-layer split, 7-directory placement question, import-depth rules |
+| **Inventory** | `README.md` | Running-a-slice selectors, layout, tag vocabulary, project tables |
+| **Ignores** | `.gitignore` | `.features-gen/`, `reports/`, `playwright-report/`, `test-results/` |
+
+### Design decisions
+
+These are **opinionated defaults**, not suggestions — each earned its place in a
+production suite:
+
+- **`missingSteps: 'fail-on-gen'`** — a Gherkin sentence with no step definition
+  fails `bddgen` before any browser starts, rather than producing a confusing
+  runtime error.
+- **`aiFix.promptAttachment`** — every failure carries the feature, the step, that
+  step's source, and the page's ARIA snapshot as a ready-made prompt.
+- **One worker locally, four on CI** — keeps the local loop fast and deterministic;
+  no per-worker database isolation needed.
+- **Seed through API, not a script** — the suite proves the application can populate
+  itself through its own admin surface.
+- **Per-test address isolation** — carrier-grade NAT space gives each test its own
+  `x-forwarded-for`, so a credential-stuffing guard doesn't kill the suite halfway
+  through.
+- **`mergeTests(bdd, suite)`, never spreading** — spreading silently drops auto
+  fixtures; `mergeTests` preserves them.
+
+### Customizing after scaffold
+
+Every `.ts` template uses `your …` prose placeholders (same style as the `.md`
+files). The init agent replaces them with your project's actual values. After
+scaffolding:
+
+1. Replace health endpoint URLs in `steps/health.steps.ts` and `lib/api.ts`
+2. Replace sign-in locators in `pom/sign-in.page.ts` with your actual form
+3. Replace the seed endpoint in `seed.setup.ts` with your admin API
+4. Replace the `webServer` commands in `playwright.config.ts` with your actual
+   start commands
+5. Set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` env vars
+6. Run `npx bddgen && npx playwright test` — the health feature should go green
+
+The annotated config-guide reference at
+[`cli/kit/skills/e2e/references/config-guide.md`](cli/kit/skills/e2e/references/config-guide.md)
+explains every `playwright.config.ts` setting — what it does, why the value was
+chosen, and what breaks when it's wrong.
+
+### The five-layer split
+
+```
+features/<split>/*.feature   →  Gherkin (business language, business outcomes)
+steps/*.steps.ts             →  Given/When/Then implementations + assertions
+pom/*.page.ts                →  Locators, waits, and reasoning behind each
+fixtures/index.ts            →  Page objects and per-scenario world
+lib/*.ts                     →  Identities, API origin, address isolation
+```
+
+**A step never constructs a page object** (takes it as a fixture), **a page object
+never asserts a business outcome** (only its own preconditions), **a feature file
+names no selector, URL, status code or id**, and **state moves through `world`,
+never module-level variables.**
+
+### The seven feature directories
+
+| Directory | A scenario goes here when its failure means… |
+|---|---|
+| `journeys/` | A user's end-to-end path through the product is broken |
+| `roles/` | A permission boundary is wrong |
+| `internal/` | An internal/admin surface is broken |
+| `capabilities/` | One capability, tested in isolation, doesn't work |
+| `cross-cutting/` | Infrastructure the whole suite depends on is down |
+| `defects/` | A confirmed bug's regression test |
+| `known-issues/` | Behaviour that hasn't been built yet |
 
 ## License
 
