@@ -72,9 +72,27 @@ Example with prefix `acme`:
 - `the review skill` → `the acme-review skill`
 - `the tdd skill` → `the acme-tdd skill`
 
+### 7. Cross-skill relative paths
+
+In the kit, sibling skills sit at `../<skill-name>/`. Installed directories
+are prefixed, so rewrite the path segment to keep links resolving:
+
+| Find | Replace with |
+|---|---|
+| `../<skill-name>/` | `../<prefix>-<skill-name>/` |
+
+Examples with prefix `acme`:
+- `../refactor/references/smells.md` → `../acme-refactor/references/smells.md`
+- `../tdd/SKILL.md` → `../acme-tdd/SKILL.md`
+- `../../state-management/references/data-flow.md` →
+  `../../acme-state-management/references/data-flow.md`
+
+The name must be bounded by slashes on both sides (`../` before, `/` after);
+never rewrite inside longer names such as `../pre-analysis/`.
+
 ## Skill names to transform
 
-Apply rules 5 and 6 for each of these skill names:
+Apply rules 5, 6, and 7 for each of these skill names:
 
 ```
 review, verify, tdd, bugfix, refactor, simplicity, spec-workflow, pr,

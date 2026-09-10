@@ -46,5 +46,17 @@ func TransformContent(content string, cfg *config.ProjectConfig) string {
 		)
 	}
 
+	// Rewrite cross-skill relative paths. In the kit, sibling skills sit at
+	// `../<skill>/`; installed directories are prefixed, so rewrite the
+	// segment to keep links resolving (e.g. `../refactor/references/smells.md`
+	// → `../<prefix>-refactor/references/smells.md`).
+	for _, skill := range coreSkills {
+		content = strings.ReplaceAll(content,
+			"../"+skill+"/",
+			"../"+cfg.Prefix+"-"+skill+"/",
+		)
+	}
+
+
 	return content
 }

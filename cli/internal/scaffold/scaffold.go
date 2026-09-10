@@ -69,8 +69,10 @@ func installSkills(kitFS embed.FS, cfg *config.ProjectConfig, targetDir string) 
 	if err := os.MkdirAll(skillsDir, 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(claudeSkillsDir, 0755); err != nil {
-		return err
+	if cfg.IncludeClaude {
+		if err := os.MkdirAll(claudeSkillsDir, 0755); err != nil {
+			return err
+		}
 	}
 
 	// Walk all skills in the kit
@@ -136,6 +138,10 @@ func installSkills(kitFS embed.FS, cfg *config.ProjectConfig, targetDir string) 
 
 	if err != nil {
 		return err
+	}
+
+	if !cfg.IncludeClaude {
+		return nil
 	}
 
 	// Create symlinks from .claude/skills/ to .agents/skills/

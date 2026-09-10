@@ -9,6 +9,11 @@ import (
 
 const ConfigFile = "agent-kit.yaml"
 
+// InitLogFile is written at the project root after every successful setup
+// run. It records what was installed and how long the run took so setups
+// can be benchmarked and compared over time.
+const InitLogFile = "agent-kit-init-log.md"
+
 // ProjectConfig stores the project's agent-kit configuration.
 // Written by `agent-kit init`, read by `agent-kit add`.
 type ProjectConfig struct {
@@ -17,6 +22,8 @@ type ProjectConfig struct {
 	Stack           []string `yaml:"stack"`
 	PackageManager  string   `yaml:"packageManager"`
 	Monorepo        bool     `yaml:"monorepo"`
+	TicketTracker   string   `yaml:"ticketTracker"`
+	FeatureFlow     []string `yaml:"featureFlow"`
 	IncludeOpenSpec bool     `yaml:"includeOpenSpec"`
 	IncludeClaude   bool     `yaml:"includeClaude"`
 	IncludeHooks    bool     `yaml:"includeHooks"`

@@ -24,6 +24,7 @@ they are categorised, which stacks they apply to, and whether they are optional.
 | `simplicity` | Simplest-sufficient-shape decision — the rung ladder | no | — (always) |
 | `spec-workflow` | Typed changes with end-to-end-first ordering | no | — (always) |
 | `pr` | Five PR types with checklists and conventions | no | — (always) |
+| `flow` | End-to-end feature pipeline: ticket → specify → implement → verify → deliver → record | no | — (always) |
 | `optimization-loop` | BASELINE→CHANGE→MEASURE→KEEP-OR-REVERT performance loop | **yes** | — |
 | `problem-solving` | Impasse techniques and the dev-note handed to the user | **yes** | — |
 

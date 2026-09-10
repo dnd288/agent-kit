@@ -1,6 +1,6 @@
 ---
 name: agent-kit-init
-description: "Initialize Agent Kit in a project — scan the codebase to detect stack, package manager, and structure; confirm with the user; then scaffold skills, templates, hooks, CI, and specifications. Use this skill when setting up agent-driven development practices in a new or existing repository."
+description: "Initialize Agent Kit in a project — scan the codebase to detect stack, package manager, and structure; confirm with the user; then scaffold skills, templates, hooks, CI, and specifications. Setup only: the skill ends at the report and never continues into implementation. Use this skill when setting up agent-driven development practices in a new or existing repository."
 ---
 
 # Initialize Agent Kit
@@ -27,6 +27,18 @@ Do not use this skill when:
 - Agent-kit is already installed (`agent-kit.yaml` exists at the project root).
   Use the `add` procedure to install additional skills instead.
 - The user only wants a single skill added to an existing agent-kit project.
+
+## Scope: setup only
+
+This skill is a setup task and nothing else. It ends at the Phase 4 report.
+
+- Do what was asked: detect, confirm, scaffold, report. Do not start
+  implementing product features, writing application code, or "trying out"
+  the freshly installed skills.
+- The report's "Next steps" are addressed to the user, not to you. Do not
+  execute them unprompted — do not fill in `AGENTS.md` boundaries, adjust
+  `CONTRIBUTING.md`, or run validation sweeps on your own initiative.
+- When the report is printed, stop and wait for an explicit instruction.
 
 ## Read first
 
@@ -103,6 +115,12 @@ Scan the project root to infer configuration. Do not ask the user yet.
   If `agent-kit.yaml` exists, stop and tell the user agent-kit is already
   initialized.
 
+**Ticket tracker:**
+- `git remote get-url origin` contains `github.com` and `gh` is installed →
+  `github`
+- Otherwise `none` — and ask the user whether the team tracks work in
+  GitHub Issues, Jira, Linear, or nothing.
+
 ### Phase 2 — Confirm
 
 Present the detected configuration to the user as a structured summary:
@@ -114,6 +132,7 @@ Detected configuration:
   Package manager: pnpm
   Stack:           React, Next.js, Playwright
   Monorepo:        yes
+  Ticket tracker:  github
 
 Modules to install:
   ✓ Skills (15 core + 2 stack-matched)
@@ -132,8 +151,13 @@ Ask the user to:
 1. Confirm or change the detected values (project name, prefix, package manager).
 2. Decide on each optional module (OpenSpec, Claude Code, hooks, CI).
 3. Decide on each optional skill.
+4. Confirm the ticket tracker (`none` / `github` / `jira` / `linear`) and the
+   project's end-to-end feature flow — e.g. "does feature work start with a
+   ticket? what happens between the ticket and the PR?" Record the answers in
+   `ticketTracker` and `featureFlow` (see `references/config-schema.md`).
 
-If the user says "use defaults" or "yes to all", enable everything.
+If the user says "use defaults" or "yes to all", enable everything and use
+the standard six-stage flow.
 
 ### Phase 3 — Scaffold
 
@@ -152,10 +176,16 @@ For each skill in the registry (see `references/skill-registry.md`):
    - Stack-specific skills → install only if the detected stack matches.
    - Optional skills → install only if the user opted in.
 
-2. **Copy the skill directory** from the kit root:
+2. **Copy the entire skill directory, recursively** from the kit root:
    ```
    ../../skills/<skill-name>/  →  <project>/.agents/skills/<prefix>-<skill-name>/
    ```
+   Copy every file and every subdirectory — `references/`, `templates/`,
+   fixtures, everything. A skill is a directory, not a single file:
+   installing only `SKILL.md` is broken output, because most skills point to
+   sibling files under `references/` — e.g. the pr skill's five PR-type guides.
+   If your copy tool takes a file list, enumerate the source directory
+   recursively first.
    Apply transforms to every `.md` file.
 
 3. **Create the Claude Code symlink** (if Claude Code integration is enabled):
@@ -242,6 +272,14 @@ stack:
   - Playwright
 packageManager: pnpm
 monorepo: true
+ticketTracker: github
+featureFlow:
+  - capture
+  - specify
+  - implement
+  - verify
+  - deliver
+  - record
 includeOpenSpec: true
 includeClaude: true
 includeHooks: true
@@ -257,10 +295,13 @@ installedSkills:
 
 ### Phase 4 — Report
 
-After scaffolding, report:
+After scaffolding:
 
-1. **Summary** of what was installed — skill count, modules enabled, files created.
-2. **Next steps** the user should take:
+1. **Write the init log** — save `agent-kit-init-log.md` at the project root
+   (template in the Report section below). It records this setup run for
+   later benchmarking.
+2. **Report** what was installed — skill count, modules enabled, files created.
+3. **Next steps** the user should take:
    - Read `AGENTS.md` and fill in project-specific boundaries.
    - Review `CONTRIBUTING.md` and replace placeholder commands with real ones.
    - If OpenSpec was installed, customise `openspec/config.yaml` with project context.
@@ -287,6 +328,10 @@ After scaffolding, report:
 
 6. **Config file is YAML.** Use `agent-kit.yaml`, not JSON or TOML. Field names
    use camelCase to match the existing schema.
+7. **Setup ends at the report.** This skill installs methodology and tooling;
+   it never continues into implementing the project's own features. If the
+   user wants implementation, that is a separate task — finish the report
+   and stop.
 
 ## Red flags
 
@@ -300,6 +345,9 @@ After scaffolding, report:
   the hooks module.
 - **Existing CLAUDE.md has custom content** — do not overwrite. Ask the user
   whether to append `@AGENTS.md` to the existing file or skip.
+- **Momentum into implementation** — scaffolding finished and the pull to
+  "start using" the kit by building a feature. Stop: this task ends at the
+  report.
 
 ## Verification
 
@@ -308,6 +356,12 @@ After scaffolding:
 - [ ] `agent-kit.yaml` exists at the project root and is valid YAML.
 - [ ] Every installed skill has a directory under `.agents/skills/<prefix>-<name>/`
       with a `SKILL.md` file.
+- [ ] Every file under each source skill directory exists under
+      `.agents/skills/<prefix>-<name>/` — file counts match the kit
+      (`references/` and `templates/` subdirectories included).
+- [ ] Every relative path an installed SKILL.md points to (typically a
+      document under the skill's `references/` directory) resolves to an
+      installed file.
 - [ ] If Claude Code integration is enabled, every skill has a symlink under
       `.claude/skills/<prefix>-<name>` pointing to the correct `.agents/` directory.
 - [ ] `AGENTS.md` exists and contains the skills table (not the `<!-- SKILLS_TABLE -->`
@@ -334,6 +388,7 @@ Agent Kit initialized.
   Skills installed: <count> (<core count> core + <stack count> stack-matched + <optional count> optional)
   Modules:          skills, templates[, openspec][, claude][, hooks][, ci]
   Config:           agent-kit.yaml
+  Init log:         agent-kit-init-log.md
 
 Next steps:
   1. Read AGENTS.md and fill in project-specific boundaries
@@ -341,3 +396,32 @@ Next steps:
   3. Run your validation command
   4. Commit the new files
 ```
+
+Before printing the report, write the init log at the project root:
+
+````markdown
+# Agent Kit init log
+
+- Date: <RFC3339 timestamp>
+- Duration: <elapsed wall time, e.g. 4m12s>
+- Method: agent (skill-driven)
+- Project: <name>
+- Prefix: <prefix>
+- Package manager: <pm>
+- Stack: <stack, comma-separated>
+- Monorepo: <yes/no>
+- Modules: skills, templates[, openspec][, claude][, hooks][, ci]
+- Skills installed: <count> (<default> default + <optional> optional)
+- Skill files: <count> under .agents/skills/
+
+## Installed skills
+
+| Skill | Category |
+|---|---|
+| <prefix>-<name> | <category> |
+````
+
+When the report is printed, this skill is finished. The next steps belong to
+the user — do not execute them yourself, do not load the freshly installed
+workflow skills, and do not start implementing the project's features. Wait
+for an explicit instruction.

@@ -40,6 +40,7 @@ var All = []Skill{
 	{Name: "simplicity", Category: "Core Methodology", Summary: "Simplest-sufficient-shape decision — the rung ladder"},
 	{Name: "spec-workflow", Category: "Core Methodology", Summary: "Typed changes with end-to-end-first ordering"},
 	{Name: "pr", Category: "Core Methodology", Summary: "Five PR types with checklists and conventions"},
+	{Name: "flow", Category: "Core Methodology", Summary: "End-to-end feature pipeline: ticket → specify → implement → verify → deliver → record"},
 	{Name: "optimization-loop", Category: "Core Methodology", Optional: true, Summary: "BASELINE→CHANGE→MEASURE→KEEP-OR-REVERT performance loop"},
 	{Name: "problem-solving", Category: "Core Methodology", Optional: true, Summary: "Impasse techniques and the dev-note handed to the user"},
 

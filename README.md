@@ -158,6 +158,7 @@ your-project/
 ├── CONTRIBUTING.md              # Development workflow
 ├── CONTEXT.md                   # Project glossary
 ├── agent-kit.yaml               # Configuration (prefix, stack, installed skills)
+├── agent-kit-init-log.md        # Setup record: what was installed, how long it took
 ├── .agents/skills/              # Tool-neutral skills
 │   ├── <prefix>-review/
 │   ├── <prefix>-verify/
@@ -213,6 +214,7 @@ Skills follow the [Agent Skills format](cli/kit/docs/skill-format.md) — YAML f
 | `simplicity` | Simplest-sufficient-shape decision — the rung ladder |
 | `spec-workflow` | Typed changes with end-to-end-first ordering |
 | `pr` | Five PR types with checklists |
+| `flow` | End-to-end feature pipeline — ticket → specify → implement → verify → deliver → record, synced with the project's tracker |
 | `optimization-loop` | BASELINE→CHANGE→MEASURE→KEEP-OR-REVERT performance loop *(optional)* |
 | `problem-solving` | Impasse techniques and the dev-note handed to the user *(optional)* |
 

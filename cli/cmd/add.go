@@ -77,8 +77,10 @@ func installSingleSkill(cfg *config.ProjectConfig, targetDir, skillName string) 
 	if err := os.MkdirAll(filepath.Join(skillsDir, prefixedName), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(claudeSkillsDir, 0755); err != nil {
-		return err
+	if cfg.IncludeClaude {
+		if err := os.MkdirAll(claudeSkillsDir, 0755); err != nil {
+			return err
+		}
 	}
 
 	root := "skills/" + skillName
@@ -108,6 +110,10 @@ func installSingleSkill(cfg *config.ProjectConfig, targetDir, skillName string) 
 	})
 	if err != nil {
 		return err
+	}
+
+	if !cfg.IncludeClaude {
+		return nil
 	}
 
 	linkPath := filepath.Join(claudeSkillsDir, prefixedName)

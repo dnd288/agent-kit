@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/agent-kit/agent-kit-cli/internal/config"
 	"github.com/agent-kit/agent-kit-cli/internal/prompt"
@@ -39,6 +43,7 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
+	start := time.Now()
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -60,7 +65,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 			cfg.PackageManager = packageManager
 		}
 		cfg.Stack = []string{"React", "Next.js", "Playwright"}
-		cfg.Monorepo = true
+		cfg.TicketTracker = detectTicketTracker(cwd)
+		cfg.FeatureFlow = defaultFeatureFlow()
 		cfg.IncludeOpenSpec = true
 		cfg.IncludeClaude = true
 		cfg.IncludeHooks = true
@@ -84,13 +90,91 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("write config: %w", err)
 	}
 
+	if err := writeInitLog(cwd, cfg, time.Since(start)); err != nil {
+		return fmt.Errorf("write init log: %w", err)
+	}
+
 	fmt.Println("\nAgent Kit installed.")
+	fmt.Printf("Init log: %s\n", config.InitLogFile)
 	fmt.Println("Next steps:")
 	fmt.Println("  1. Read AGENTS.md and fill in project-specific boundaries")
 	fmt.Println("  2. Review CONTRIBUTING.md and adjust commands")
 	fmt.Println("  3. Run your validation command")
 
 	return nil
+}
+
+// writeInitLog records the completed setup at the project root for later
+// benchmarking.
+func writeInitLog(targetDir string, cfg *config.ProjectConfig, elapsed time.Duration) error {
+	fileCount, err := countSkillFiles(targetDir)
+	if err != nil {
+		return err
+	}
+
+	optional := 0
+	for _, name := range cfg.InstalledSkills {
+		if skills.IsOptional(name) {
+			optional++
+		}
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Agent Kit init log\n\n")
+	fmt.Fprintf(&b, "- Date: %s\n", time.Now().Format(time.RFC3339))
+	fmt.Fprintf(&b, "- Duration: %s\n", elapsed.Round(time.Millisecond))
+	fmt.Fprintf(&b, "- Method: agent-kit CLI\n")
+	fmt.Fprintf(&b, "- Project: %s\n", cfg.ProjectName)
+	fmt.Fprintf(&b, "- Prefix: %s\n", cfg.Prefix)
+	fmt.Fprintf(&b, "- Package manager: %s\n", cfg.PackageManager)
+	fmt.Fprintf(&b, "- Stack: %s\n", strings.Join(cfg.Stack, ", "))
+	fmt.Fprintf(&b, "- Ticket tracker: %s\n", cfg.TicketTracker)
+	fmt.Fprintf(&b, "- Modules: %s\n", strings.Join(enabledModules(cfg), ", "))
+	fmt.Fprintf(&b, "- Skills installed: %d (%d optional)\n", len(cfg.InstalledSkills), optional)
+	fmt.Fprintf(&b, "- Skill files: %d under .agents/skills/\n", fileCount)
+
+	if len(cfg.InstalledSkills) > 0 {
+		b.WriteString("\n## Installed skills\n\n| Skill | Category |\n|---|---|\n")
+		for _, name := range cfg.InstalledSkills {
+			fmt.Fprintf(&b, "| %s-%s | %s |\n", cfg.Prefix, name, skills.Category(name))
+		}
+	}
+
+	return os.WriteFile(filepath.Join(targetDir, config.InitLogFile), []byte(b.String()), 0644)
+}
+
+// countSkillFiles counts files under <targetDir>/.agents/skills.
+func countSkillFiles(targetDir string) (int, error) {
+	count := 0
+	err := filepath.WalkDir(filepath.Join(targetDir, ".agents", "skills"),
+		func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !d.IsDir() {
+				count++
+			}
+			return nil
+		})
+	return count, err
+}
+
+// enabledModules lists the modules enabled in the config, in install order.
+func enabledModules(cfg *config.ProjectConfig) []string {
+	modules := []string{"skills", "templates"}
+	if cfg.IncludeClaude {
+		modules = append(modules, "claude")
+	}
+	if cfg.IncludeOpenSpec {
+		modules = append(modules, "openspec")
+	}
+	if cfg.IncludeHooks {
+		modules = append(modules, "hooks")
+	}
+	if cfg.IncludeCI {
+		modules = append(modules, "ci")
+	}
+	return modules
 }
 
 func askConfig(cwd string) (*config.ProjectConfig, error) {
@@ -154,6 +238,27 @@ func askConfig(cwd string) (*config.ProjectConfig, error) {
 		return nil, err
 	}
 
+	fmt.Printf("\nTicket tracker detected: %s\n", detectTicketTracker(cwd))
+	cfg.TicketTracker, err = prompt.AskSelect("Ticket tracker", trackerChoices(detectTicketTracker(cwd)))
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("\nFeature flow stages: capture → specify → implement → verify → deliver → record")
+	standard, err := prompt.AskConfirm("Use the standard feature flow?", true)
+	if err != nil {
+		return nil, err
+	}
+	if standard {
+		cfg.FeatureFlow = defaultFeatureFlow()
+	} else {
+		custom, err := prompt.AskString("Custom stages (comma-separated)", strings.Join(defaultFeatureFlow(), ", "))
+		if err != nil {
+			return nil, err
+		}
+		cfg.FeatureFlow = parseFeatureFlow(custom)
+	}
+
 	optional := skills.Optional()
 	if len(optional) > 0 {
 		fmt.Println("\nOptional skills (not installed by default):")
@@ -209,4 +314,53 @@ func sanitizePrefix(s string) string {
 	s = strings.ReplaceAll(s, " ", "-")
 	s = strings.ReplaceAll(s, "_", "-")
 	return s
+}
+
+// detectTicketTracker infers the ticket tracker from the git remote and the
+// gh CLI. Only GitHub is auto-detectable; other trackers are asked.
+func detectTicketTracker(cwd string) string {
+	out, err := exec.Command("git", "-C", cwd, "remote", "get-url", "origin").Output()
+	if err == nil && strings.Contains(string(out), "github.com") {
+		if _, err := exec.LookPath("gh"); err == nil {
+			return "github"
+		}
+	}
+	return "none"
+}
+
+// defaultFeatureFlow is the standard six-stage pipeline the flow skill ships with.
+func defaultFeatureFlow() []string {
+	return []string{"capture", "specify", "implement", "verify", "deliver", "record"}
+}
+
+// trackerChoices returns the tracker options with the detected one first.
+func trackerChoices(detected string) []string {
+	all := []string{"github", "jira", "linear", "none"}
+	choices := []string{}
+	for _, c := range all {
+		if c == detected {
+			choices = append(choices, c)
+		}
+	}
+	for _, c := range all {
+		if c != detected {
+			choices = append(choices, c)
+		}
+	}
+	return choices
+}
+
+// parseFeatureFlow splits and normalizes a comma-separated stage list.
+func parseFeatureFlow(s string) []string {
+	var stages []string
+	for _, part := range strings.Split(s, ",") {
+		stage := strings.ToLower(strings.TrimSpace(part))
+		if stage != "" {
+			stages = append(stages, stage)
+		}
+	}
+	if len(stages) == 0 {
+		return defaultFeatureFlow()
+	}
+	return stages
 }

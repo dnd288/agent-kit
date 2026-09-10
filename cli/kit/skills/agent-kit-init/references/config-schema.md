@@ -79,6 +79,29 @@ and how to auto-detect it from the codebase.
   - `package.json` has `workspaces` field → `true`
   - `Cargo.toml` has `[workspace]` section → `true`
 
+### `ticketTracker`
+- **Type:** string enum: `none`, `github`, `jira`, `linear`
+- **Default:** `none`
+- **Detection:**
+  - `git remote get-url origin` contains `github.com` and the `gh` CLI is on
+    `PATH` → `github`
+  - Otherwise → `none` (ask the user; they know if the team uses Jira or
+    Linear)
+- **Purpose:** the `flow` skill reads this to decide whether feature work
+  starts with a ticket and where progress reports go.
+
+### `featureFlow`
+- **Type:** string array (ordered stage names)
+- **Default:** `["capture", "specify", "implement", "verify", "deliver", "record"]`
+- **Valid values:** any ordered subset or custom naming of the six canonical
+  stages — `capture` (ticket), `specify` (proposal), `implement`, `verify`,
+  `deliver` (PR), `record` (tracker report)
+- **Detection:** not detectable from code — ask the user what the project's
+  end-to-end flow for one feature is, then record their answer here
+- **Purpose:** the `flow` skill runs exactly these stages in this order.
+  Projects without a tracker commonly drop `capture`/`record` or fold them
+  into `specify`.
+
 ### `includeOpenSpec`
 - **Type:** boolean
 - **Default:** `true`
