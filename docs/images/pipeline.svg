@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="196" viewBox="0 0 880 196">
+  <style>text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+  <rect width="880" height="196" rx="10" fill="#0d1117"/>
+  <text x="440" y="32" text-anchor="middle" font-size="13" fill="#8b949e">one feature, end to end — the flow skill runs it, the tracker records it</text>
+
+  <line x1="100" y1="112" x2="804" y2="112" stroke="#30363d" stroke-width="2"/>
+  <text x="20" y="117" font-size="13" fill="#e6edf3">idea</text>
+  <text x="820" y="118" font-size="15" fill="#3fb950">✓</text>
+  <text x="812" y="136" font-size="10" fill="#8b949e">merged</text>
+
+  <circle cx="100" cy="112" r="5" fill="#58a6ff">
+    <animate attributeName="cx" values="100;804;804" keyTimes="0;0.857;1" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.02;0.84;0.87;1" dur="8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ticket -->
+  <rect x="100" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#f0883e;#f0883e;#30363d" keyTimes="0;0.01;0.14;0.17" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="152" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">ticket</text>
+  <rect x="106" y="140" width="92" height="3" rx="1.5" fill="#f0883e">
+    <animate attributeName="width" values="0;92;92" keyTimes="0;0.143;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- specify -->
+  <rect x="220" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#bc8cff;#bc8cff;#30363d" keyTimes="0.143;0.15;0.28;0.31" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="272" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">specify</text>
+  <rect x="226" y="140" width="92" height="3" rx="1.5" fill="#bc8cff">
+    <animate attributeName="width" values="0;92;92" keyTimes="0.143;0.286;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- implement -->
+  <rect x="340" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#58a6ff;#58a6ff;#30363d" keyTimes="0.286;0.29;0.43;0.46" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="392" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">implement</text>
+  <rect x="346" y="140" width="92" height="3" rx="1.5" fill="#58a6ff">
+    <animate attributeName="width" values="0;92;92" keyTimes="0.286;0.429;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- verify -->
+  <rect x="460" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#3fb950;#3fb950;#30363d" keyTimes="0.429;0.44;0.57;0.60" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="512" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">verify</text>
+  <rect x="466" y="140" width="92" height="3" rx="1.5" fill="#3fb950">
+    <animate attributeName="width" values="0;92;92" keyTimes="0.429;0.571;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- deliver -->
+  <rect x="580" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#39c5cf;#39c5cf;#30363d" keyTimes="0.571;0.58;0.71;0.74" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="632" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">deliver</text>
+  <rect x="586" y="140" width="92" height="3" rx="1.5" fill="#39c5cf">
+    <animate attributeName="width" values="0;92;92" keyTimes="0.571;0.714;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- record -->
+  <rect x="700" y="90" width="104" height="44" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5">
+    <animate attributeName="stroke" values="#30363d;#7ee787;#7ee787;#30363d" keyTimes="0.714;0.72;0.86;0.89" dur="8s" repeatCount="indefinite"/>
+  </rect>
+  <text x="752" y="117" text-anchor="middle" font-size="13" fill="#e6edf3">record</text>
+  <rect x="706" y="140" width="92" height="3" rx="1.5" fill="#7ee787">
+    <animate attributeName="width" values="0;92;92" keyTimes="0.714;0.857;1" dur="8s" repeatCount="indefinite"/>
+  </rect>
+
+  <text x="440" y="178" text-anchor="middle" font-size="12" fill="#8b949e">acceptance criteria live on the ticket · the spec turns them into scenarios · the PR closes the ticket</text>
+</svg>

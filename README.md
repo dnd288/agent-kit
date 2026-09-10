@@ -1,92 +1,80 @@
 # Agent Kit
 
-A reusable agent-driven development methodology — skills, templates, specifications, and tooling — extracted from production use and ready to adopt in any software project.
+<p align="center">
+  <img src="docs/images/pipeline.svg" alt="Agent Kit feature pipeline: idea → ticket → specify → implement → verify → deliver → record" width="880">
+</p>
 
-## What is this?
+A reusable agent-driven development methodology — 23 process skills, instruction templates, specifications, and tooling — extracted from production use and adoptable in any software project, by any coding agent.
 
-Agent Kit is a collection of **process skills**, **instruction templates**, and an **initialization skill** that brings structured agent-assisted development to your codebase. It works with any coding agent — Claude Code, OMP, Codex, OpenCode, or anything that reads markdown instructions. It encodes battle-tested practices for:
+| Part | For | Content |
+|---|---|---|
+| **[Part 1 — Setup guide](#part-1--setup-guide-for-agents)** | **Agents** executing setup | Exact steps, prompts, commands, and file layout — complete and literal |
+| **[Part 2 — Overview](#part-2--overview-for-humans)** | **Humans** evaluating the kit | What it does, what lands in your repo, the philosophy — short and visual |
 
-- **Code review** — five-axis review beyond what linters catch
-- **Verification** — adversarial claim-testing against specifications
-- **Test-driven development** — RED→GREEN with mode-to-claim mapping
-- **Bug fixing** — structured inspect→debug→impact→fix→verify loop
-- **Refactoring** — MEASURE→PIN→MOVE→PROVE→RECORD with characterisation harnesses
-- **Specification workflow** — typed changes with end-to-end ordering
-- **Pull requests** — typed PRs with checklists and conventions
-- **Security** — surface-aware security review
-- And more: component development, UI development, API contracts, state management, E2E testing
+---
 
-## Philosophy
+## Part 1 — Setup guide (for agents)
 
-**Compound engineering: the codebase gets simpler as the product gets larger.**
+> This part is written to be executed. Follow it top to bottom. Every path is
+> relative to the project being set up.
 
-1. Leave it easier to change than you found it
-2. A new abstraction earns its place by deleting
-3. Two is a coincidence; three is a missing abstraction — and the abstraction replaces all three
-4. Delete the special case; do not flag it
-5. An exception is written down and bounded, or it becomes the rule
-
-See [cli/kit/docs/philosophy.md](cli/kit/docs/philosophy.md) for the full treatment.
-
-## Quick Start
-
-### Option A — via any coding agent (recommended)
-
-No binary installation needed. Any coding agent that can read files and run shell
-commands can initialize Agent Kit in your project.
-
-**Step 1 — get the kit into your project:**
+### 1. Get the kit into the project
 
 ```bash
 # Clone and copy the kit directory
-git clone https://github.com/your-org/agent-kit.git /tmp/agent-kit
+git clone https://github.com/dnd288/agent-kit.git /tmp/agent-kit
 cp -r /tmp/agent-kit/cli/kit /path/to/your-project/.agent-kit-source
 ```
 
-Or add as a git submodule:
+Or add it as a git submodule:
 
 ```bash
-git submodule add https://github.com/your-org/agent-kit.git .agent-kit
+git submodule add https://github.com/dnd288/agent-kit.git .agent-kit
 ```
 
-**Step 2 — ask your agent to initialize:**
+### 2. Run the init skill
 
 Tell your coding agent:
 
-> Read the skill at `.agent-kit-source/skills/agent-kit-init/SKILL.md` and follow
-> its procedure to initialize agent-kit in this project.
+> Read the skill at `.agent-kit-source/skills/agent-kit-init/SKILL.md` and
+> follow its procedure to initialize agent-kit in this project.
 
 The agent will:
-1. **Detect** your stack, package manager, and monorepo structure from the codebase
-2. **Confirm** the configuration with you
-3. **Scaffold** skills, templates, hooks, CI, and specifications
-4. **Report** what was installed and next steps
 
-**Step 3 — clean up the source (optional):**
+1. **Detect** — stack, package manager, monorepo layout, ticket tracker (GitHub
+   remote + `gh` CLI → `github`, otherwise ask), existing setup
+2. **Confirm** — present the detected config and ask about: optional modules
+   (OpenSpec, Claude Code, git hooks, CI), optional skills, the project's
+   **ticket tracker** (`none` / `github` / `jira` / `linear`), and the
+   **end-to-end feature flow** (does feature work start with a ticket? what
+   happens between ticket and PR?)
+3. **Scaffold** — copy each skill **directory recursively** (SKILL.md +
+   `references/` + templates), transform placeholders and skill-name prefixes,
+   write root templates, optional modules, and `agent-kit.yaml`
+4. **Report** — write `agent-kit-init-log.md` (setup record, used for
+   benchmarking) and print a summary
 
-After initialization, the kit source is no longer needed — all assets have been
-copied and transformed into your project:
+**Guardrail:** the init skill is setup-only. It ends at the report — it never
+continues into implementing your project's features unless you explicitly ask
+for that as a separate task.
+
+**Step 3 — clean up the source (optional):** after initialization the kit
+source is no longer needed:
 
 ```bash
-rm -rf .agent-kit-source   # if you copied it
-# or remove the submodule if you used that approach
+rm -rf .agent-kit-source   # or remove the submodule
 ```
 
-#### Agent-specific examples
+#### Agent-specific prompts
 
 <details>
 <summary><strong>Claude Code</strong></summary>
 
 ```
-# In Claude Code, just say:
 Read .agent-kit-source/skills/agent-kit-init/SKILL.md and initialize agent-kit in this project.
 ```
 
-Or if you've set up the skill as a slash command:
-
-```
-/agent-kit-init
-```
+Or, if installed as a skill: `/agent-kit-init`
 
 </details>
 
@@ -102,8 +90,6 @@ codex "Read the skill file at .agent-kit-source/skills/agent-kit-init/SKILL.md a
 <details>
 <summary><strong>OMP / OpenCode / other agents</strong></summary>
 
-Point your agent to the skill file and ask it to follow the procedure:
-
 ```
 Please read .agent-kit-source/skills/agent-kit-init/SKILL.md and execute
 the initialization procedure for this project.
@@ -114,42 +100,36 @@ run the init skill.
 
 </details>
 
-### Option B — via the CLI
+### 3. Alternative — via the CLI
 
-A Go CLI is also available for scripted or non-agent workflows.
+A Go CLI is available for scripted or non-agent workflows:
 
 ```bash
 # From source
 cd cli && go build -o agent-kit && mv agent-kit /usr/local/bin/
-
-# Or with go install
-go install github.com/your-org/agent-kit/cli@latest
 ```
 
 ```bash
 cd your-project
-agent-kit init
+agent-kit init            # interactive
+agent-kit init --yes      # defaults + auto-detection, non-interactive
 ```
 
-The CLI will interactively ask for project name, prefix, stack, package manager,
-and which modules to include.
+The CLI asks for project name, prefix, package manager, stack, modules, ticket
+tracker, and feature flow. `--yes` answers everything from detection.
 
-### Add a skill later
-
-Via an agent — ask it to read the `agent-kit-init` skill's add procedure, or:
+### 4. After setup
 
 ```bash
-agent-kit add security
-agent-kit add e2e
+agent-kit add security    # install an additional skill
+agent-kit list            # list available skills by category
+agent-kit validate        # check kit integrity (registry ↔ directories, references)
 ```
 
-### List available skills
+Via an agent instead: ask it to read the `agent-kit-init` skill's add
+procedure.
 
-```bash
-agent-kit list
-```
-
-## What gets generated
+### 5. What gets generated
 
 ```
 your-project/
@@ -157,7 +137,7 @@ your-project/
 ├── CLAUDE.md                    # Loads AGENTS.md
 ├── CONTRIBUTING.md              # Development workflow
 ├── CONTEXT.md                   # Project glossary
-├── agent-kit.yaml               # Configuration (prefix, stack, installed skills)
+├── agent-kit.yaml               # Configuration (prefix, stack, tracker, flow)
 ├── agent-kit-init-log.md        # Setup record: what was installed, how long it took
 ├── .agents/skills/              # Tool-neutral skills
 │   ├── <prefix>-review/
@@ -175,13 +155,18 @@ your-project/
 └── .github/workflows/           # CI templates (optional)
 ```
 
-## Structure
+Skills install **whole directories** — every installed SKILL.md's relative
+pointers (e.g. a `references/` guide, a sibling skill's document) resolve after
+installing. If a relative path dangles, the install was partial: re-copy the
+full source directory.
+
+### 6. Repo structure
 
 ```
 agent-kit/
 ├── cli/
 │   ├── kit/                     # The methodology content
-│   │   ├── skills/              # 24 process skills + init meta-skill
+│   │   ├── skills/              # 23 process skills + init meta-skill
 │   │   │   ├── e2e/
 │   │   │   │   ├── SKILL.md     # Authoring and healing rules
 │   │   │   │   ├── references/  # config-guide, authoring, healing
@@ -195,71 +180,20 @@ agent-kit/
 │   │   └── docs/                # Methodology documentation
 │   ├── cmd/                     # CLI commands (Go)
 │   └── internal/                # CLI internals
+├── docs/images/                 # Diagrams used by this README
 └── examples/                    # Example output
 ```
 
-## Skills
+### 7. Using installed skills
 
-Skills follow the [Agent Skills format](cli/kit/docs/skill-format.md) — YAML frontmatter with trigger descriptions, plus a markdown body encoding the process. They are **tool-neutral**: any agent platform that reads `SKILL.md` picks them up.
-
-### Core Methodology
-
-| Skill | Owns |
-|---|---|
-| `review` | Five-axis code review gate |
-| `verify` | Adversarial CLAIM→EXTRACT→DOUBT→RECONCILE→STOP verification |
-| `tdd` | RED→GREEN discipline with mode-to-claim mapping |
-| `bugfix` | inspect→debug→impact→fix→verify loop |
-| `refactor` | MEASURE→PIN→MOVE→PROVE→RECORD loop |
-| `simplicity` | Simplest-sufficient-shape decision — the rung ladder |
-| `spec-workflow` | Typed changes with end-to-end-first ordering |
-| `pr` | Five PR types with checklists |
-| `flow` | End-to-end feature pipeline — ticket → specify → implement → verify → deliver → record, synced with the project's tracker |
-| `optimization-loop` | BASELINE→CHANGE→MEASURE→KEEP-OR-REVERT performance loop *(optional)* |
-| `problem-solving` | Impasse techniques and the dev-note handed to the user *(optional)* |
-
-### Development
-
-| Skill | Owns |
-|---|---|
-| `component-development` | Primitive component patterns |
-| `ui-development` | Feature-folder composite patterns |
-| `app-development` | Application routing and data flow |
-| `api-contract` | Schema-first API design |
-| `state-management` | State placement decision ladder |
-| `design` | Design system methodology |
-
-### Testing
-
-| Skill | Owns |
-|---|---|
-| `e2e` | End-to-end test authoring and healing — includes [scaffold templates](#e2e-scaffold-templates) |
-| `test` | Test mode taxonomy and operational runbook |
-| `scenario-explorer` | Enumerate the case space before writing tests *(optional)* |
-
-### Operations
-
-| Skill | Owns |
-|---|---|
-| `security` | Surface-aware security review |
-| `local-dev` | Local development environment setup |
-
-### Setup (meta)
-
-| Skill | Owns |
-|---|---|
-| `agent-kit-init` | Initialize Agent Kit via any coding agent |
-
-> Meta skills are used from the kit source tree and are not scaffolded into
-> target projects.
-
-## Using skills after initialization
-
-Once Agent Kit is initialized in your project, the installed skills are available
-under `.agents/skills/<prefix>-<skill-name>/SKILL.md`. Tell your coding agent to
-load and follow a skill when performing the corresponding task:
+Installed skills live under `.agents/skills/<prefix>-<skill-name>/SKILL.md`.
+Tell your coding agent to load and follow a skill when performing the
+corresponding task:
 
 ```
+# Run the whole feature pipeline
+Load the <prefix>-flow skill and take issue #123 end to end.
+
 # Code review
 Load the <prefix>-review skill and review the current diff.
 
@@ -278,11 +212,63 @@ Load the <prefix>-pr skill and open a pull request for this branch.
 
 For Claude Code, skills in `.claude/skills/` are auto-discovered — the agent
 loads them based on the trigger text in the `description` frontmatter field.
-
 For other agents, point them to the `.agents/skills/` directory or the specific
 skill file.
 
-## E2E scaffold templates
+### 8. Skill catalogue
+
+#### Core Methodology
+
+| Skill | Owns |
+|---|---|
+| `review` | Five-axis code review gate |
+| `verify` | Adversarial CLAIM→EXTRACT→DOUBT→RECONCILE→STOP verification |
+| `tdd` | RED→GREEN discipline with mode-to-claim mapping |
+| `bugfix` | inspect→debug→impact→fix→verify loop |
+| `refactor` | MEASURE→PIN→MOVE→PROVE→RECORD loop |
+| `simplicity` | Simplest-sufficient-shape decision — the rung ladder |
+| `spec-workflow` | Typed changes with end-to-end-first ordering |
+| `pr` | Five PR types with checklists |
+| `flow` | End-to-end feature pipeline — ticket → specify → implement → verify → deliver → record, synced with the project's tracker |
+| `optimization-loop` | BASELINE→CHANGE→MEASURE→KEEP-OR-REVERT performance loop *(optional)* |
+| `problem-solving` | Impasse techniques and the dev-note handed to the user *(optional)* |
+
+#### Development
+
+| Skill | Owns |
+|---|---|
+| `component-development` | Primitive component patterns |
+| `ui-development` | Feature-folder composite patterns |
+| `app-development` | Application routing and data flow |
+| `api-contract` | Schema-first API design |
+| `state-management` | State placement decision ladder |
+| `design` | Design system methodology |
+
+#### Testing
+
+| Skill | Owns |
+|---|---|
+| `e2e` | End-to-end test authoring and healing — includes [scaffold templates](#9-e2e-scaffold-templates) |
+| `test` | Test mode taxonomy and operational runbook |
+| `scenario-explorer` | Enumerate the case space before writing tests *(optional)* |
+
+#### Operations
+
+| Skill | Owns |
+|---|---|
+| `security` | Surface-aware security review |
+| `local-dev` | Local development environment setup |
+
+#### Setup (meta)
+
+| Skill | Owns |
+|---|---|
+| `agent-kit-init` | Initialize Agent Kit via any coding agent |
+
+> Meta skills are used from the kit source tree and are not scaffolded into
+> target projects.
+
+### 9. E2E scaffold templates
 
 The `e2e` skill ships scaffold templates under
 [`cli/kit/skills/e2e/templates/`](cli/kit/skills/e2e/templates/) — a working
@@ -291,7 +277,7 @@ from a production suite (200+ scenarios, 36 features). When `agent-kit add e2e`
 runs, the init agent copies these into your project's e2e path and replaces
 `your …` placeholders with actual values.
 
-### What the scaffold gives you
+#### What the scaffold gives you
 
 | Concern | File(s) | What it does |
 |---|---|---|
@@ -312,7 +298,7 @@ runs, the init agent copies these into your project's e2e path and replaces
 | **Inventory** | `README.md` | Running-a-slice selectors, layout, tag vocabulary, project tables |
 | **Ignores** | `.gitignore` | `.features-gen/`, `reports/`, `playwright-report/`, `test-results/` |
 
-### Design decisions
+#### Design decisions
 
 These are **opinionated defaults**, not suggestions — each earned its place in a
 production suite:
@@ -332,7 +318,7 @@ production suite:
 - **`mergeTests(bdd, suite)`, never spreading** — spreading silently drops auto
   fixtures; `mergeTests` preserves them.
 
-### Customizing after scaffold
+#### Customizing after scaffold
 
 Every `.ts` template uses `your …` prose placeholders (same style as the `.md`
 files). The init agent replaces them with your project's actual values. After
@@ -351,7 +337,7 @@ The annotated config-guide reference at
 explains every `playwright.config.ts` setting — what it does, why the value was
 chosen, and what breaks when it's wrong.
 
-### The five-layer split
+#### The five-layer split
 
 ```
 features/<split>/*.feature   →  Gherkin (business language, business outcomes)
@@ -366,7 +352,7 @@ never asserts a business outcome** (only its own preconditions), **a feature fil
 names no selector, URL, status code or id**, and **state moves through `world`,
 never module-level variables.**
 
-### The seven feature directories
+#### The seven feature directories
 
 | Directory | A scenario goes here when its failure means… |
 |---|---|
@@ -377,6 +363,57 @@ never module-level variables.**
 | `cross-cutting/` | Infrastructure the whole suite depends on is down |
 | `defects/` | A confirmed bug's regression test |
 | `known-issues/` | Behaviour that hasn't been built yet |
+
+---
+
+## Part 2 — Overview (for humans)
+
+### Any agent, one methodology
+
+Agent Kit is not a framework your code depends on — it is a set of *procedures*
+your coding agent follows. Review gates, TDD loops, spec workflows, PR
+conventions: written down as skills, installed into your repo, and executed by
+whatever agent you already use.
+
+<p align="center">
+  <img src="docs/images/any-agent.svg" alt="Any coding agent can install and run Agent Kit" width="880">
+</p>
+
+### What lands in your repo
+
+One init run. No runtime dependency, nothing to deploy — just markdown
+procedures beside your code, plus optional OpenSpec schemas, git hooks, and CI
+templates. A setup log records exactly what was installed, so runs can be
+compared over time.
+
+<p align="center">
+  <img src="docs/images/anatomy.svg" alt="Files scaffolded into a project by agent-kit init" width="880">
+</p>
+
+### How a feature flows
+
+The `flow` skill runs one pipeline per feature and keeps your issue tracker —
+GitHub Issues, Jira, Linear, or none — as the single record of what is
+happening and why. Stages are project configuration, decided at setup.
+
+<p align="center">
+  <img src="docs/images/skills-map.svg" alt="Agent Kit skill catalogue by category" width="880">
+</p>
+
+### The philosophy
+
+**Compound engineering: the codebase gets simpler as the product gets larger.**
+
+1. Leave it easier to change than you found it
+2. A new abstraction earns its place by deleting
+3. Two is a coincidence; three is a missing abstraction — and the abstraction replaces all three
+4. Delete the special case; do not flag it
+5. An exception is written down and bounded, or it becomes the rule
+
+Skills route, documents own rules: a skill names the procedure and points at
+the document that owns the principle. Specifications come before code; claims
+are verified against them, adversarially. The full treatment:
+[cli/kit/docs/philosophy.md](cli/kit/docs/philosophy.md).
 
 ## License
 

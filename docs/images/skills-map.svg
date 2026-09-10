@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="252" viewBox="0 0 880 252">
+  <style>text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+  <rect width="880" height="252" rx="10" fill="#0d1117"/>
+  <text x="24" y="30" font-size="13" fill="#8b949e">23 skills — 19 installed by default, 3 opt-in, 1 meta installer</text>
+
+  <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.03;0.09;1" dur="8s" repeatCount="indefinite"/>
+    <text x="24" y="60" font-size="12.5" fill="#bc8cff">Core Methodology</text>
+    <text x="24" y="80" font-size="12" fill="#e6edf3">review · verify · tdd · bugfix · refactor · simplicity · spec-workflow · pr · flow</text>
+    <text x="24" y="97" font-size="12" fill="#8b949e">+ opt-in: optimization-loop · problem-solving</text>
+  </g>
+
+  <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.14;0.20;1" dur="8s" repeatCount="indefinite"/>
+    <text x="24" y="126" font-size="12.5" fill="#58a6ff">Development</text>
+    <text x="24" y="146" font-size="12" fill="#e6edf3">component-development · ui-development · app-development · api-contract · state-management · design</text>
+  </g>
+
+  <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.25;0.31;1" dur="8s" repeatCount="indefinite"/>
+    <text x="24" y="175" font-size="12.5" fill="#3fb950">Testing</text>
+    <text x="24" y="195" font-size="12" fill="#e6edf3">e2e · test</text>
+    <text x="120" y="195" font-size="12" fill="#8b949e">+ opt-in: scenario-explorer</text>
+  </g>
+
+  <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.36;0.42;1" dur="8s" repeatCount="indefinite"/>
+    <text x="24" y="224" font-size="12.5" fill="#f0883e">Operations</text>
+    <text x="140" y="224" font-size="12" fill="#e6edf3">security · local-dev</text>
+  </g>
+
+  <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.47;0.53;1" dur="8s" repeatCount="indefinite"/>
+    <text x="24" y="246" font-size="12.5" fill="#7ee787">Setup (meta)</text>
+    <text x="150" y="246" font-size="12" fill="#e6edf3">agent-kit-init — the installer that runs from any agent</text>
+  </g>
+</svg>

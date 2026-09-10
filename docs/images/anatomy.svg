@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="352" viewBox="0 0 880 352">
+  <style>text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+  <rect width="880" height="352" rx="10" fill="#0d1117"/>
+  <text x="24" y="30" font-size="13" fill="#8b949e">what one init run scaffolds — every file transformed to your project's names</text>
+
+  <g font-size="12.5">
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.02;0.06;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="58" fill="#e6edf3">your-project/</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.07;0.11;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="81" fill="#e6edf3">├── AGENTS.md</text><text x="250" y="81" fill="#8b949e"># golden rules · boundaries · skills table</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.12;0.16;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="104" fill="#e6edf3">├── CLAUDE.md</text><text x="250" y="104" fill="#8b949e"># loads AGENTS.md</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.17;0.21;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="127" fill="#e6edf3">├── CONTEXT.md</text><text x="250" y="127" fill="#8b949e"># project glossary</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.22;0.26;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="150" fill="#e6edf3">├── CONTRIBUTING.md</text><text x="250" y="150" fill="#8b949e"># real commands, real workflow</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.27;0.31;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="173" fill="#e6edf3">├── agent-kit.yaml</text><text x="250" y="173" fill="#8b949e"># prefix · stack · ticketTracker · featureFlow</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.32;0.36;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="196" fill="#e6edf3">├── agent-kit-init-log.md</text><text x="250" y="196" fill="#7ee787"># setup record — benchmark this</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.37;0.41;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="219" fill="#79c0ff">├── .agents/skills/</text><text x="250" y="219" fill="#8b949e"># 17+ skills under your prefix</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.42;0.46;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="242" fill="#e6edf3">│   ├── &lt;prefix&gt;-review/</text><text x="250" y="242" fill="#8b949e"># SKILL.md + references/</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.47;0.51;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="265" fill="#e6edf3">│   ├── &lt;prefix&gt;-flow/</text><text x="250" y="265" fill="#8b949e"># ticket → PR → report</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.52;0.56;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="288" fill="#e6edf3">│   └── &lt;prefix&gt;-…</text><text x="250" y="288" fill="#8b949e"># tdd · bugfix · spec-workflow · …</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.57;0.61;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="311" fill="#79c0ff">├── openspec/</text><text x="250" y="311" fill="#8b949e"># typed change specs</text><text x="700" y="311" fill="#7ee787">optional</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.62;0.66;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="327" fill="#79c0ff">├── .husky/</text><text x="250" y="327" fill="#8b949e"># pre-commit · commit-msg · pre-push</text><text x="700" y="327" fill="#7ee787">optional</text></g>
+    <g><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.67;0.71;1" dur="8s" repeatCount="indefinite"/>
+      <text x="24" y="343" fill="#79c0ff">└── .github/workflows/</text><text x="250" y="343" fill="#8b949e"># CI templates</text><text x="700" y="343" fill="#7ee787">optional</text></g>
+  </g>
+</svg>
